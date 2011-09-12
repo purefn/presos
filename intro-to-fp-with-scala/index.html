@@ -22,21 +22,18 @@
       <h1>What is functional programming?</h1>
       <ul class="incremental">
         <li>Programming with functions.</li>
-        <li>A function f: A => B relates every value of type A to exactly one value of type B</li>
-      </ul>
-    </div>
-    <div class="slide">
-      <h1>Referential transparency</h1>
-      <ul class="incremental">
-        <li>every occurrence of an expression can be replaced with its value without affecting the result</li>
-        <li>f is pure if f(x) is referentially transparent for all referentially transparent choices of x</li>
-        <li>square: Int => Int = x => x * x is a function</li>
-        <li>later: Long => Long = x => System.currentTimeMillis + x is NOT a function</li>
+        <li>What's a function?
+          <ul class="incremental">
+            <li>a function associates one quantity, the input of the function, with another quantity, the output of the function</li>
+            <li>a function f: A => B relates every value of type A to <strong>exactly</strong> one value of type B</li>
+            <li>this property is called <strong>referential transparency</strong></li>
+          </ul>
+        </li>
       </ul>
     </div>
     <div class="slide">
       <h1>A function cannot have side-effects</h1>
-      <ul>
+      <ul class="incremental">
         <li>Assigning to variables</li>
         <li>Mutating data structures</li>
         <li>Throwing exceptions</li>
@@ -48,36 +45,48 @@
       <h1>A functional program...</h1>
       <ul class="incremental">
         <li>is NOT a sequence of instructions</li>
-        <li>is a single referentially transparent expression</li>
         <li>describes what, not how</li>
-      </ul> 
-    </div>
-    <div class="slide">
-      <h1>So what is functional programming?</h1>
-      A style of writing code with some constraints
-      <ul class="incremental">
-        <li>only referential expressions</li>
-        <li>only pure functions</li>
-        <li>no side-effects, ever</li>
+        <li>is style of writing code with some constraints
+          <ul class="incremental">
+            <li>only referentially transparent expressions</li>
+            <li>only pure functions</li>
+            <li>no side-effects, ever</li>
+          </ul>
+        </li>
       </ul>
     </div>
     <div class="slide">
       <h1>But without side-effects, how can we...</h1>
       Loop without variable assignment?
-      <br>
+      <p>
       Recursion, more specifically tail-recursion
     </div>
     <div class="slide">
       <h1>But without side-effects, how can we...</h1>
       Mutate data structures?
-      <br>
+      <p>
       Persistent data structures
+      <p>
+      <a href="http://www.amazon.com/Purely-Functional-Structures-Chris-Okasaki/dp/0521663504">Purely Functional Data Structures</a> by Chris Okasaki<br>
+      <a href="http://www.st.cs.uni-saarland.de/edu/seminare/2005/advanced-fp/docs/huet-zipper.pdf">Huet Zippers</a>
     </div>
     <div class="slide">
       <h1>But without side-effects, how can we...</h1>
       Handle errors?
-      <br>
+      <p>
       Persistent data structures like Option and Either
+      <pre>
+def validateAge(a: Int): Validation[NonEmptyList[Error], Int] = 
+  if (0 to 130 contains a) a.success
+  else nel1(err"Age must be in range").fail)
+
+def validateName(s: String): Validation[NonEmptyList[Error], String] = 
+  if (s.headOption.exists(_.isUpper)) s.success
+  else nel1(err("Name must start with a capital letter").fail)
+
+def mkPerson(name: String, age: Int): Validation[NonEmptyList[Error], Person] =
+  (validateName(name) <*> validateAge(age)){ (n, a) => Person(n, a)}
+      </pre>
     </div>
     <div class="slide">
       <h1>But without side-effects, how can we...</h1>
@@ -95,36 +104,6 @@
         <li>easier to reason about -> fewer bugs</li>
         <li>scale indefinitely</li>
       </ul>
-    </div>
-    <div class="slide">
-      <h1>What is wrong with this code?</h1>
-      <pre>
-      def sum(xs: List[Int]): Int = {
-        var s = 0
-        for (x <- xs) s = s + x
-        s
-      }
-      </pre>
-    </div>
-    <div class="slide">
-      <h1>And this code?</h1>
-      <pre>
-      def concat(xs: Set[List[Int]]): List[Int] = {
-        var a = List[Int]()
-        for (x <- xs) a = a ++ x
-        a
-      }
-      </pre>
-    </div>
-    <div class="slide">
-      <h1>And this?</h1>
-      <pre>
-      def merge(xs: Tree[Map[String, Int]]): Map[String, Int] = {
-        var m = Map[String, Int]()
-        for (x <- xs) m = m + (x._1, m.getOrElse(m._1, 0) + x._2)
-        m
-      }
-      </pre>
     </div>
   </body>
 </html>
