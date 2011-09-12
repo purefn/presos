@@ -14,11 +14,117 @@
       <img id="head-icon" alt="f(x)" src="graphics/fx.png"> 
     </div>
     <div class="slide cover"> 
-      <br clear="all">
+      <img src="graphics/Half_Life_2_Crowbar_and_Lambda_by_SgtHK.jpg" alt="Lambda" class="cover">
       <h1>Introduction to Functional Programming with Scala</h1> 
       <p>Richard Wallace,</a> <a href="mailto:rwallace@atlassian.com">rwallace@atlassian.com</a></p> 
     </div>
     <div class="slide">
+      <h1>What is functional programming?</h1>
+      <ul class="incremental">
+        <li>Programming with functions.</li>
+        <li>A function f: A => B relates every value of type A to exactly one value of type B</li>
+      </ul>
+    </div>
+    <div class="slide">
+      <h1>Referential transparency</h1>
+      <ul class="incremental">
+        <li>every occurrence of an expression can be replaced with its value without affecting the result</li>
+        <li>f is pure if f(x) is referentially transparent for all referentially transparent choices of x</li>
+        <li>square: Int => Int = x => x * x is a function</li>
+        <li>later: Long => Long = x => System.currentTimeMillis + x is NOT a function</li>
+      </ul>
+    </div>
+    <div class="slide">
+      <h1>A function cannot have side-effects</h1>
+      <ul>
+        <li>Assigning to variables</li>
+        <li>Mutating data structures</li>
+        <li>Throwing exceptions</li>
+        <li>Reading/writing files</li>
+        <li>etc</li>
+      </ul>
+    </div>
+    <div class="slide">
+      <h1>A functional program...</h1>
+      <ul class="incremental">
+        <li>is NOT a sequence of instructions</li>
+        <li>is a single referentially transparent expression</li>
+        <li>describes what, not how</li>
+      </ul> 
+    </div>
+    <div class="slide">
+      <h1>So what is functional programming?</h1>
+      A style of writing code with some constraints
+      <ul class="incremental">
+        <li>only referential expressions</li>
+        <li>only pure functions</li>
+        <li>no side-effects, ever</li>
+      </ul>
+    </div>
+    <div class="slide">
+      <h1>But without side-effects, how can we...</h1>
+      Loop without variable assignment?
+      <br>
+      Recursion, more specifically tail-recursion
+    </div>
+    <div class="slide">
+      <h1>But without side-effects, how can we...</h1>
+      Mutate data structures?
+      <br>
+      Persistent data structures
+    </div>
+    <div class="slide">
+      <h1>But without side-effects, how can we...</h1>
+      Handle errors?
+      <br>
+      Persistent data structures like Option and Either
+    </div>
+    <div class="slide">
+      <h1>But without side-effects, how can we...</h1>
+      Reading/writing files or other IO?
+      <br>
+      Declare what needs to be done as a data structure
+      <br>
+      Let the interpreter turn that into instructions to the machine
+    </div>
+    <div class="slide">
+      <h1>Why FP?</h1>
+      <ul class="incremental">
+        <li>modularity</li>
+        <li>composability</li>
+        <li>easier to reason about -> fewer bugs</li>
+        <li>scale indefinitely</li>
+      </ul>
+    </div>
+    <div class="slide">
+      <h1>What is wrong with this code?</h1>
+      <pre>
+      def sum(xs: List[Int]): Int = {
+        var s = 0
+        for (x <- xs) s = s + x
+        s
+      }
+      </pre>
+    </div>
+    <div class="slide">
+      <h1>And this code?</h1>
+      <pre>
+      def concat(xs: Set[List[Int]]): List[Int] = {
+        var a = List[Int]()
+        for (x <- xs) a = a ++ x
+        a
+      }
+      </pre>
+    </div>
+    <div class="slide">
+      <h1>And this?</h1>
+      <pre>
+      def merge(xs: Tree[Map[String, Int]]): Map[String, Int] = {
+        var m = Map[String, Int]()
+        for (x <- xs) m = m + (x._1, m.getOrElse(m._1, 0) + x._2)
+        m
+      }
+      </pre>
     </div>
   </body>
 </html>
