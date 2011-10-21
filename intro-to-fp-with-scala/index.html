@@ -75,18 +75,6 @@
       Handle errors?
       <p>
       Persistent data structures like Option and Either
-      <pre>
-def validateAge(a: Int): Validation[NonEmptyList[Error], Int] = 
-  if (0 to 130 contains a) a.success
-  else nel1(err"Age must be in range").fail)
-
-def validateName(s: String): Validation[NonEmptyList[Error], String] = 
-  if (s.headOption.exists(_.isUpper)) s.success
-  else nel1(err("Name must start with a capital letter").fail)
-
-def mkPerson(name: String, age: Int): Validation[NonEmptyList[Error], Person] =
-  (validateName(name) <*> validateAge(age)){ (n, a) => Person(n, a)}
-      </pre>
     </div>
     <div class="slide">
       <h1>But without side-effects, how can we...</h1>
