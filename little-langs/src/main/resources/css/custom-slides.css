@@ -1,0 +1,17 @@
+img[title="Captain Lambda"], 
+img[title="Sweeper"], 
+img[title="Payoff"],
+img[title="Confused?"],
+img[title="Free Your Mind"]
+{ float: right; }
+
+img[title="Questions?"] { float: center; }
+
+img[title="Manual Labor"] {
+  bottom: -135px;
+  position: absolute;
+  right: 100px;
+}
+
+li.incremental code { color: #DDE; }
+

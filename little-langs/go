@@ -1,0 +1,3 @@
+#!/bin/sh
+
+pandoc -s --self-contained -i --data-dir=src/main/resources -c src/main/resources/css/custom-slides.css -t s5 src/main/markdown/slides.md -o slides.html
