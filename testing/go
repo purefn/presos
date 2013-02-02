@@ -1,0 +1,3 @@
+#!/bin/sh
+
+pandoc -s --self-contained -i --data-dir=data -c custom-slides.css -t slidy testing.md -o testing.html
