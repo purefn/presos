@@ -1,0 +1,1998 @@
+| \gMonad transformers and mtl
+
+Using monad transformers to build composable, extensible programs.
+---
+| \gQuick monad review
+
+A monad is a monoid in the category of endofunctors
+
+--
+A monad is a triple of an endofunctor and two natural transformations
+
+--
+A monad is a type-class:
+--
+  * for a type constructor, e.g. \*F[_]\s
+--
+  * with a function to lift a value into the computation, \*A => F[A]\s
+--
+  * and a function to join computations, \*F[F[A]] => F[A]\s
+
+--
+```
+trait Monad[F[_]] {
+--
+  def point[A](a: => A): F[A]
+
+--
+  def join[A](ffa: F[F[A]]): F[A]
+
+--
+  def bind[A, B](fa: F[A])(f: A => F[B]): F[B] = join(map(fa)(f))
+}
+```
+
+---
+| \g I am da law!
+
+The three laws of robo^H^H^H^Hmonads
+
+--
+Left identity:
+
+```
+  return a >>= f ≡ f a
+
+  Monad[F].bind(Monad[F].point(a))(f) ≡ f(a)
+```
+  
+--
+Right identity:
+
+```
+  m >>= return ≡ m
+
+  Monad[F].bind(m)(Monad[F].point(_)) ≡ m
+```
+
+--
+Associativity:
+
+```
+  (m >>= f) >>= g ≡ m >>= (\x -> f x >>= g)
+
+  Monad[F].bind(Monad[F].bind(m)(f))(g) ≡ Monad[F].bind(m)(x => Monad[F].bind(f(x))(g))
+```
+
+---
+| \g You know Option, Either, and List, but do you recall
+
+The \*Reader\s monad is used for composing computations (i.e. functions)
+  that read values from a shared environment (i.e. have the same input type).
+
+--
+```
+case class Reader[R, A](run: R => A)
+
+--
+object Reader {
+  implicit def ReaderMonad[R] = new Monad[Reader[R, ?]] {
+
+
+
+
+
+  }
+}
+```
+---
+| \g You know Option, Either, and List, but do you recall
+
+The \*Reader\s monad is used for composing computations (i.e. functions)
+  that read values from a shared environment (i.e. have the same input type).
+
+```
+case class Reader[R, A](run: R => A)
+
+object Reader {
+  implicit def ReaderMonad[R] = new Monad[Reader[R, ?]] {
+    def point[A](a: => A): Reader[R, A] = 
+
+
+
+  }
+}
+```
+---
+| \g You know Option, Either, and List, but do you recall
+
+The \*Reader\s monad is used for composing computations (i.e. functions)
+  that read values from a shared environment (i.e. have the same input type).
+
+```
+case class Reader[R, A](run: R => A)
+
+object Reader {
+  implicit def ReaderMonad[R] = new Monad[Reader[R, ?]] {
+    def point[A](a: => A): Reader[R, A] = 
+      Reader(???) // need an R => A
+
+
+
+  }
+}
+```
+---
+| \g You know Option, Either, and List, but do you recall
+
+The \*Reader\s monad is used for composing computations (i.e. functions)
+  that read values from a shared environment (i.e. have the same input type).
+
+```
+case class Reader[R, A](run: R => A)
+
+object Reader {
+  implicit def ReaderMonad[R] = new Monad[Reader[R, ?]] {
+    def point[A](a: => A): Reader[R, A] = 
+      Reader(r => ???) // need an A
+
+
+
+  }
+}
+```
+---
+| \g You know Option, Either, and List, but do you recall
+
+The \*Reader\s monad is used for composing computations (i.e. functions)
+  that read values from a shared environment (i.e. have the same input type).
+
+```
+case class Reader[R, A](run: R => A)
+
+object Reader {
+  implicit def ReaderMonad[R] = new Monad[Reader[R, ?]] {
+    def point[A](a: => A): Reader[R, A] = 
+      Reader(r => a)
+
+
+
+  }
+}
+```
+---
+| \g You know Option, Either, and List, but do you recall
+
+The \*Reader\s monad is used for composing computations (i.e. functions)
+  that read values from a shared environment (i.e. have the same input type).
+
+```
+case class Reader[R, A](run: R => A)
+
+object Reader {
+  implicit def ReaderMonad[R] = new Monad[Reader[R, ?]] {
+    def point[A](a: => A): Reader[R, A] = 
+      Reader(r => a)
+
+    def bind[A, B](fa: Reader[R, A])(f: A => Reader[R, B]): Reader[R, B] =
+
+  }
+}
+```
+---
+| \g You know Option, Either, and List, but do you recall
+
+The \*Reader\s monad is used for composing computations (i.e. functions)
+  that read values from a shared environment (i.e. have the same input type).
+
+```
+case class Reader[R, A](run: R => A)
+
+object Reader {
+  implicit def ReaderMonad[R] = new Monad[Reader[R, ?]] {
+    def point[A](a: => A): Reader[R, A] = 
+      Reader(r => a)
+
+    def bind[A, B](fa: Reader[R, A])(f: A => Reader[R, B]): Reader[R, B] =
+      Reader(???) // need to fill in with an R => B
+  }
+}
+```
+---
+| \g You know Option, Either, and List, but do you recall
+
+The \*Reader\s monad is used for composing computations (i.e. functions)
+  that read values from a shared environment (i.e. have the same input type).
+
+```
+case class Reader[R, A](run: R => A)
+
+object Reader {
+  implicit def ReaderMonad[R] = new Monad[Reader[R, ?]] {
+    def point[A](a: => A): Reader[R, A] = 
+      Reader(r => a)
+
+    def bind[A, B](fa: Reader[R, A])(f: A => Reader[R, B]): Reader[R, B] =
+      Reader(r => ???) // need to fill in with a B
+  }
+}
+```
+---
+| \g You know Option, Either, and List, but do you recall
+
+The \*Reader\s monad is used for composing computations (i.e. functions)
+  that read values from a shared environment (i.e. have the same input type).
+
+```
+case class Reader[R, A](run: R => A)
+
+object Reader {
+  implicit def ReaderMonad[R] = new Monad[Reader[R, ?]] {
+    def point[A](a: => A): Reader[R, A] = 
+      Reader(r => a)
+
+    def bind[A, B](fa: Reader[R, A])(f: A => Reader[R, B]): Reader[R, B] =
+      Reader(r => fa.run(r) ???) // now we have an A, but need a B
+  }
+}
+```
+---
+| \g You know Option, Either, and List, but do you recall
+
+The \*Reader\s monad is used for composing computations (i.e. functions)
+  that read values from a shared environment (i.e. have the same input type).
+
+```
+case class Reader[R, A](run: R => A)
+
+object Reader {
+  implicit def ReaderMonad[R] = new Monad[Reader[R, ?]] {
+    def point[A](a: => A): Reader[R, A] = 
+      Reader(r => a)
+
+    def bind[A, B](fa: Reader[R, A])(f: A => Reader[R, B]): Reader[R, B] =
+      Reader(r => f(fa.run(r)) ???) // now we have a Reader[R, B], need a B
+  }
+}
+```
+---
+| \g You know Option, Either, and List, but do you recall
+
+The \*Reader\s monad is used for composing computations (i.e. functions)
+  that read values from a shared environment (i.e. have the same input type).
+
+```
+case class Reader[R, A](run: R => A)
+
+object Reader {
+  implicit def ReaderMonad[R] = new Monad[Reader[R, ?]] {
+    def point[A](a: => A): Reader[R, A] = 
+      Reader(r => a)
+
+    def bind[A, B](fa: Reader[R, A])(f: A => Reader[R, B]): Reader[R, B] =
+      Reader(r => f(fa.run(r)).run(r))
+  }
+}
+```
+---
+| \gReader example
+
+```
+val greeting = Reader((n: String) => s"Dear $n\n")
+val body = Reader((n: String) => s"You are my favorite, $n!\n")
+val farewell = Reader((_: String) => "See you soon.")
+
+val message =
+  for {
+    g <- greeting
+    b <- body
+    f <- farewell
+  } yield g + b + f
+
+message.run("Lambda")
+```
+---
+| \gReader example
+
+```
+def ask[R]: Reader[R, R] = Reader(r => r)
+val greeting = ask[String].map(n => s"Dear $n\n")
+val body = ask[String].map(n => s"You are my favorite, $n!\n")
+val farewell = Monad[Reader[String, ?]].point("See you soon.")
+
+val message =
+  for {
+    g <- greeting
+    b <- body
+    f <- farewell
+  } yield g + b + f
+
+message.run("Lambda")
+```
+---
+| \gAnd then there's this guy!
+
+The \*State\s monad is used when composing computations (i.e. functions)
+  which maintain state (i.e. your threading a value through all the functions).
+
+--
+```
+case class State[S, A](run: S => (S, A))
+```
+
+--
+```
+object State {
+  implicit def StateMonad[S] = new Monad[State[S, ?]] {
+
+
+
+
+
+
+
+  }
+}
+```
+---
+| \gAnd then there's this guy!
+
+The \*State\s monad is used when composing computations (i.e. functions)
+  which maintain state (i.e. your threading a value through all the functions).
+
+```
+case class State[S, A](run: S => (S, A))
+
+object State {
+  implicit def StateMonad[S] = new Monad[State[S, ?]] {
+    def point[A](a: => A): State[S, A] =
+
+
+
+
+
+
+  }
+}
+```
+---
+| \gAnd then there's this guy!
+
+The \*State\s monad is used when composing computations (i.e. functions)
+  which maintain state (i.e. your threading a value through all the functions).
+
+```
+case class State[S, A](run: S => (S, A))
+
+object State {
+  implicit def StateMonad[S] = new Monad[State[S, ?]] {
+    def point[A](a: => A): State[S, A] =
+      State(???) // need an S => (S, A)
+
+
+
+
+
+  }
+}
+```
+---
+| \gAnd then there's this guy!
+
+The \*State\s monad is used when composing computations (i.e. functions)
+  which maintain state (i.e. your threading a value through all the functions).
+
+```
+case class State[S, A](run: S => (S, A))
+
+object State {
+  implicit def StateMonad[S] = new Monad[State[S, ?]] {
+    def point[A](a: => A): State[S, A] =
+      State(s => ???) // need an (S, A)
+
+
+
+
+
+  }
+}
+```
+---
+| \gAnd then there's this guy!
+
+The \*State\s monad is used when composing computations (i.e. functions)
+  which maintain state (i.e. your threading a value through all the functions).
+
+```
+case class State[S, A](run: S => (S, A))
+
+object State {
+  implicit def StateMonad[S] = new Monad[State[S, ?]] {
+    def point[A](a: => A): State[S, A] =
+      State(s => (s, a))
+
+
+
+
+
+  }
+}
+```
+---
+| \gAnd then there's this guy!
+
+The \*State\s monad is used when composing computations (i.e. functions)
+  which maintain state (i.e. your threading a value through all the functions).
+
+```
+case class State[S, A](run: S => (S, A))
+
+object State {
+  implicit def StateMonad[S] = new Monad[State[S, ?]] {
+    def point[A](a: => A): State[S, A] =
+      State(s => (s, a))
+
+    def bind[A, B](fa: State[S, A])(f: A => State[S, B]): State[S, B] =
+
+
+
+  }
+}
+```
+---
+| \gAnd then there's this guy!
+
+The \*State\s monad is used when composing computations (i.e. functions)
+  which maintain state (i.e. your threading a value through all the functions).
+
+```
+case class State[S, A](run: S => (S, A))
+
+object State {
+  implicit def StateMonad[S] = new Monad[State[S, ?]] {
+    def point[A](a: => A): State[S, A] =
+      State(s => (s, a))
+
+    def bind[A, B](fa: State[S, A])(f: A => State[S, B]): State[S, B] =
+      State(???) // need an S => (S, B)
+
+
+  }
+}
+```
+---
+| \gAnd then there's this guy!
+
+The \*State\s monad is used when composing computations (i.e. functions)
+  which maintain state (i.e. your threading a value through all the functions).
+
+```
+case class State[S, A](run: S => (S, A))
+
+object State {
+  implicit def StateMonad[S] = new Monad[State[S, ?]] {
+    def point[A](a: => A): State[S, A] =
+      State(s => a)
+
+    def bind[A, B](fa: State[S, A])(f: A => State[S, B]): State[S, B] =
+      State(s => ???) // need an (S, B)
+
+
+  }
+}
+```
+---
+| \gAnd then there's this guy!
+
+The \*State\s monad is used when composing computations (i.e. functions)
+  which maintain state (i.e. your threading a value through all the functions).
+
+```
+case class State[S, A](run: S => (S, A))
+
+object State {
+  implicit def StateMonad[S] = new Monad[State[S, ?]] {
+    def point[A](a: => A): State[S, A] =
+      State(s => a)
+
+    def bind[A, B](fa: State[S, A])(f: A => State[S, B]): State[S, B] =
+      State(s => fa.run(s) ???) // now we have a (S, A) and need an (S, B)
+
+
+  }
+}
+```
+---
+| \gAnd then there's this guy!
+
+The \*State\s monad is used when composing computations (i.e. functions)
+  which maintain state (i.e. your threading a value through all the functions).
+
+```
+case class State[S, A](run: S => (S, A))
+
+object State {
+  implicit def StateMonad[S] = new Monad[State[S, ?]] {
+    def point[A](a: => A): State[S, A] =
+      State(s => a)
+
+    def bind[A, B](fa: State[S, A])(f: A => State[S, B]): State[S, B] =
+      State { s0 => 
+        val (s1, a) = fa.run(s) 
+        ??? // now we have a (S, A) and need an (S, B)
+      }
+  }
+}
+```
+---
+| \gAnd then there's this guy!
+
+The \*State\s monad is used when composing computations (i.e. functions)
+  which maintain state (i.e. your threading a value through all the functions).
+
+```
+case class State[S, A](run: S => (S, A))
+
+object State {
+  implicit def StateMonad[S] = new Monad[State[S, ?]] {
+    def point[A](a: => A): State[S, A] =
+      State(s => a)
+
+    def bind[A, B](fa: State[S, A])(f: A => State[S, B]): State[S, B] =
+      State { s0 => 
+        val (s1, a) = fa.run(s) 
+        f(a) ??? // now we have a State[S, B] and need an (S, B)
+      }
+  }
+}
+```
+---
+| \gAnd then there's this guy!
+
+The \*State\s monad is used when composing computations (i.e. functions)
+  which maintain state (i.e. your threading a value through all the functions).
+
+```
+case class State[S, A](run: S => (S, A))
+
+object State {
+  implicit def StateMonad[S] = new Monad[State[S, ?]] {
+    def point[A](a: => A): State[S, A] =
+      State(s => a)
+
+    def bind[A, B](fa: State[S, A])(f: A => State[S, B]): State[S, B] =
+      State { s0 => 
+        val (s1, a) = fa.run(s) 
+        f(a).run(s1)
+      }
+  }
+}
+```
+---
+| \gState example
+
+Psuedo random number generator
+
+```
+type StdGen = Double
+def random(g: StdGen): (StdGen, Double) = (g*g, g)
+```
+
+--
+```
+def randomSt: State[StdGen, Double] = State(random)
+```
+
+--
+```
+val randomTriple: State[StdGen, (Double, Double, Double)] =
+  for {
+    a <- randomSt
+    b <- randomSt
+    c <- randomSt
+  } yield (a, b, c)
+```
+---
+| \rProblem: \*Monads \_don't\s \rcompose!
+
+--
+What do we mean by that?
+
+  Given \*Monad[F]\s and \*Monad[G]\s, we'd like \*Monad[F[G[?]]]\s
+
+---
+| \gWe can do this with Functors easily enough
+
+Given \*Functor[F]\s and \*Functor[G]\s, we'd like \*Functor[F[G[?]]]\s
+
+--
+```
+def composeFunctor[F[_]: Functor, G[_]: Functor]: Functor[λ[A => F[G[A]]]] =
+  new Functor[λ[A => F[G[A]]]] {
+  
+      
+  }
+```
+---
+| \gWe can do this with Functors easily enough
+
+Given \*Functor[F]\s and \*Functor[G]\s, we'd like \*Functor[F[G[?]]]\s
+
+```
+def composeFunctor[F[_]: Functor, G[_]: Functor]: Functor[λ[A => F[G[A]]]] =
+  new Functor[λ[A => F[G[A]]]] {
+    def map[A, B](fga: F[G[A]])(f: A => B): F[G[B]] =
+      
+  }
+```
+---
+| \gWe can do this with Functors easily enough
+
+Given \*Functor[F]\s and \*Functor[G]\s, we'd like \*Functor[F[G[?]]]\s
+
+```
+def composeFunctor[F[_]: Functor, G[_]: Functor]: Functor[λ[A => F[G[A]]]] =
+  new Functor[λ[A => F[G[A]]]] {
+    def map[A, B](fga: F[G[A]])(f: A => B): F[G[B]] =
+      fga.map(???) // need G[A] => G[B]
+  }
+```
+---
+| \gWe can do this with Functors easily enough
+
+Given \*Functor[F]\s and \*Functor[G]\s, we'd like \*Functor[F[G[?]]]\s
+
+```
+def composeFunctor[F[_]: Functor, G[_]: Functor]: Functor[λ[A => F[G[A]]]] =
+  new Functor[λ[A => F[G[A]]]] {
+    def map[A, B](fga: F[G[A]])(f: A => B): F[G[B]] =
+      fga.map(ga => ???)) // need G[B]
+  }
+```
+---
+| \gWe can do this with Functors easily enough
+
+Given \*Functor[F]\s and \*Functor[G]\s, we'd like \*Functor[F[G[?]]]\s
+
+```
+def composeFunctor[F[_]: Functor, G[_]: Functor]: Functor[λ[A => F[G[A]]]] =
+  new Functor[λ[A => F[G[A]]]] {
+    def map[A, B](fga: F[G[A]])(f: A => B): F[G[B]] =
+      fga.map(ga => ga.map(???)) // need A => B
+  }
+```
+---
+| \gWe can do this with Functors easily enough
+
+Given \*Functor[F]\s and \*Functor[G]\s, we'd like \*Functor[F[G[?]]]\s
+
+```
+def composeFunctor[F[_]: Functor, G[_]: Functor]: Functor[λ[A => F[G[A]]]] =
+  new Functor[λ[A => F[G[A]]]] {
+    def map[A, B](fga: F[G[A]])(f: A => B): F[G[B]] =
+      fga.map(ga => ga.map(f))
+  }
+```
+
+--
+```
+val xs = List(some("hello"), none, some("world"))
+composeFunctor[List, Option].map(xs)(_.length)
+```
+---
+| \rBut we \*cannot\s \rwrite it for monads!
+
+```
+def composeMonad[F[_]: Monad, G[_]: Monad]: Monad[λ[A => F[G[A]]]] = 
+  ???
+```
+---
+| \gSo what do we do?
+
+We can't compose monads in a completely general way, but we can get half way there.
+--
+
+We can write a \*bind\s function that works for any \*F[Option[?]]\s
+
+--
+```
+def bindFOption[F[_], A, B]
+--
+  (foa: F[Option[A]])
+--
+  (f: A => F[Option[B]])
+--
+  (implicit F: Monad[F]): F[Option[B]] =
+--
+  F.bind(foa)(???) // need an Option[A] => F[Option[B]]
+```
+---
+| \gSo what do we do?
+
+We can't compose monads in a completely general way, but we can get half way there.
+
+We can write a \*bind\s function that works for any \*F[Option[?]]\s
+
+```
+def bindFOption[F[_], A, B]
+  (foa: F[Option[A]])
+  (f: A => F[Option[B]])
+  (implicit F: Monad[F]): F[Option[B]] =
+  F.bind(foa)(a => ???) // need an F[Option[B]]
+```
+---
+| \gSo what do we do?
+
+We can't compose monads in a completely general way, but we can get half way there.
+
+We can write a \*bind\s function that works for any \*F[Option[?]]\s
+
+```
+def bindFOption[F[_], A, B]
+  (foa: F[Option[A]])
+  (f: A => F[Option[B]])
+  (implicit F: Monad[F]): F[Option[B]] =
+  F.bind(foa)(a => a.map(f) ???) // we have an Option[F[Option[B]]
+```
+---
+| \gSo what do we do?
+
+We can't compose monads in a completely general way, but we can get half way there.
+
+We can write a \*bind\s function that works for any \*F[Option[?]]\s
+
+```
+def bindFOption[F[_], A, B]
+  (foa: F[Option[A]])
+  (f: A => F[Option[B]])
+  (implicit F: Monad[F]): F[Option[B]] =
+  F.bind(foa)(a => a.map(f).getOrElse(???)) // we need an F[Option[B]
+```
+---
+| \gSo what do we do?
+
+We can't compose monads in a completely general way, but we can get half way there.
+
+We can write a \*bind\s function that works for any \*F[Option[?]]\s
+
+```
+def bindFOption[F[_], A, B]
+  (foa: F[Option[A]])
+  (f: A => F[Option[B]])
+  (implicit F: Monad[F]): F[Option[B]] =
+  F.bind(foa)(_.map(f).getOrElse(F.point(none)))
+```
+
+--
+```
+val xs = List(some("hello"), none, some("world"))
+bindFOption(xs)(_.toList.map(some))
+```
+---
+| \g Monad transformers
+
+Monad transformers are just new types encoding this behavior — they're a half-way house for monad composition.
+
+--
+```
+case class OptionT[F[_], A](run: F[Option[A]])
+
+object OptionT {
+                                                                              
+
+
+
+
+
+
+
+
+
+
+}
+```
+---
+| \g Monad transformers
+
+Monad transformers are just new types encoding this behavior — they're a half-way house for monad composition.
+
+```
+case class OptionT[F[_], A](run: F[Option[A]])
+
+object OptionT {
+  implicit def OptionTMonad[F[_]](implicit F: Monad[F]) = 
+    new Monad[OptionT[F, ?]] {
+                                                                              
+
+
+
+
+
+
+    }
+}
+```
+---
+| \g Monad transformers
+
+Monad transformers are just new types encoding this behavior — they're a half-way house for monad composition.
+
+```
+case class OptionT[F[_], A](run: F[Option[A]])
+
+object OptionT {
+  implicit def OptionTMonad[F[_]](implicit F: Monad[F]) = 
+    new Monad[OptionT[F, ?]] {
+      def point[A](a: => A): OptionT[F, A] = 
+                                                                              
+
+
+
+
+
+
+    }
+}
+```
+---
+| \gMonad transformers
+
+Monad transformers are just new types encoding this behavior — they're a half-way house for monad composition.
+
+```
+case class OptionT[F[_], A](run: F[Option[A]])
+
+object OptionT {
+  implicit def OptionTMonad[F[_]](implicit F: Monad[F]) = 
+    new Monad[OptionT[F, ?]] {
+      def point[A](a: => A): OptionT[F, A] = 
+        OptionT(???) // need an F[A]                                        
+
+
+
+
+
+
+    }
+}
+```
+---
+| \gMonad transformers
+
+Monad transformers are just new types encoding this behavior — they're a half-way house for monad composition.
+
+```
+case class OptionT[F[_], A](run: F[Option[A]])
+
+object OptionT {
+  implicit def OptionTMonad[F[_]](implicit F: Monad[F]) = 
+    new Monad[OptionT[F, ?]] {
+      def point[A](a: => A): OptionT[F, A] = 
+        OptionT(F.point(some(a)))
+                                                                              
+
+
+
+    }
+}
+```
+---
+| \gMonad transformers
+
+Monad transformers are just new types encoding this behavior — they're a half-way house for monad composition.
+
+```
+case class OptionT[F[_], A](run: F[Option[A]])
+
+object OptionT {
+  implicit def OptionTMonad[F[_]](implicit F: Monad[F]) = 
+    new Monad[OptionT[F, ?]] {
+      def point[A](a: => A): OptionT[F, A] = 
+        OptionT(F.point(some(a)))
+
+      def bind[A, B](fa: OptionT[F, A])(f: A => OptionT[F, B]): OptionT[F, B] =
+
+
+
+    }
+}
+```
+---
+| \g Monad transformers
+
+Monad transformers are just new types encoding this behavior — they're a half-way house for monad composition.
+
+```
+case class OptionT[F[_], A](run: F[Option[A]])
+
+object OptionT {
+  implicit def OptionTMonad[F[_]](implicit F: Monad[F]) = 
+    new Monad[OptionT[F, ?]] {
+      def point[A](a: => A): OptionT[F, A] = 
+        OptionT(F.point(some(a)))
+
+      def bind[A, B](fa: OptionT[F, A])(f: A => OptionT[F, B]): OptionT[F, B] =
+        OptionT(
+          ??? // need an F[B]
+        )
+    }
+}
+```
+---
+| \g Monad transformers
+
+Monad transformers are just new types encoding this behavior — they're a half-way house for monad composition.
+
+```
+case class OptionT[F[_], A](run: F[Option[A]])
+
+object OptionT {
+  implicit def OptionTMonad[F[_]](implicit F: Monad[F]) = 
+    new Monad[OptionT[F, ?]] {
+      def point[A](a: => A): OptionT[F, A] = 
+        OptionT(F.point(some(a)))
+
+      def bind[A, B](fa: OptionT[F, A])(f: A => OptionT[F, B]): OptionT[F, B] =
+        OptionT(
+          F.bind(fa.run)(_.map(f(_).run).getOrElse(F.point(none)))
+        )
+    }
+}
+```
+
+--
+```
+val xs = List(some("hello"), none, some("world"))
+Monad[OptionT[List, ?]].
+  bind(OptionT(xs))(a => OptionT(a.toList.map(some))).
+  run
+```
+---
+| \gThe monad transformer for Reader, ReaderT
+
+
+```
+case class ReaderT[F[_], R, A](run: R => F[A])
+```
+
+--
+```
+object ReaderT {
+  implicit def ReaderTMonad[F[_], R](implicit F: Monad[F]) =
+    new Monad[ReaderT[F, R, ?]] {
+                                                                                        
+
+
+
+
+
+    }
+}
+```
+---
+| \gThe monad transformer for Reader, ReaderT
+
+
+```
+case class ReaderT[F[_], R, A](run: R => F[A])
+
+object ReaderT {
+  implicit def ReaderTMonad[F[_], R](implicit F: Monad[F]) =
+    new Monad[ReaderT[F, R, ?]] {
+      def point[A](a: => A): ReaderT[F, R, A] =
+                                                                                        
+
+
+
+
+    }
+}
+```
+---
+| \gThe monad transformer for Reader, ReaderT
+
+
+```
+case class ReaderT[F[_], R, A](run: R => F[A])
+
+object ReaderT {
+  implicit def ReaderTMonad[F[_], R](implicit F: Monad[F]) =
+    new Monad[ReaderT[F, R, ?]] {
+      def point[A](a: => A): ReaderT[F, R, A] =
+        ReaderT(???) // need an R => F[A]
+                                                                                        
+
+
+
+    }
+}
+```
+---
+| \gThe monad transformer for Reader, ReaderT
+
+
+```
+case class ReaderT[F[_], R, A](run: R => F[A])
+
+object ReaderT {
+  implicit def ReaderTMonad[F[_], R](implicit F: Monad[F]) =
+    new Monad[ReaderT[F, R, ?]] {
+      def point[A](a: => A): ReaderT[F, R, A] =
+        ReaderT(r => ???) // need an F[A]
+                                                                                        
+
+
+
+    }
+}
+```
+---
+| \gThe monad transformer for Reader, ReaderT
+
+
+```
+case class ReaderT[F[_], R, A](run: R => F[A])
+
+object ReaderT {
+  implicit def ReaderTMonad[F[_], R](implicit F: Monad[F]) =
+    new Monad[ReaderT[F, R, ?]] {
+      def point[A](a: => A): ReaderT[F, R, A] =
+        ReaderT(r => F.point(a))
+                                                                                        
+
+
+
+    }
+}
+```
+---
+| \gThe monad transformer for Reader, ReaderT
+
+
+```
+case class ReaderT[F[_], R, A](run: R => F[A])
+
+object ReaderT {
+  implicit def ReaderTMonad[F[_], R](implicit F: Monad[F]) =
+    new Monad[ReaderT[F, R, ?]] {
+      def point[A](a: => A): ReaderT[F, R, A] =
+        ReaderT(r => F.point(a))
+
+      def bind[A, B](fa: ReaderT[F, R, A])(f: A => ReaderT[F, R, B]): ReaderT[F, R, B] =
+
+    }
+}
+```
+---
+| \gThe monad transformer for Reader, ReaderT
+
+
+```
+case class ReaderT[F[_], R, A](run: R => F[A])
+
+object ReaderT {
+  implicit def ReaderTMonad[F[_], R](implicit F: Monad[F]) =
+    new Monad[ReaderT[F, R, ?]] {
+      def point[A](a: => A): ReaderT[F, R, A] =
+        ReaderT(r => F.point(a))
+
+      def bind[A, B](fa: ReaderT[F, R, A])(f: A => ReaderT[F, R, B]): ReaderT[F, R, B] =
+        ReaderT(???) // need an R => F[B]
+    }
+}
+```
+---
+| \gThe monad transformer for Reader, ReaderT
+
+
+```
+case class ReaderT[F[_], R, A](run: R => F[A])
+
+object ReaderT {
+  implicit def ReaderTMonad[F[_], R](implicit F: Monad[F]) =
+    new Monad[ReaderT[F, R, ?]] {
+      def point[A](a: => A): ReaderT[F, R, A] =
+        ReaderT(r => F.point(a))
+
+      def bind[A, B](fa: ReaderT[F, R, A])(f: A => ReaderT[F, R, B]): ReaderT[F, R, B] =
+        ReaderT(r => ???) // need an F[B]
+    }
+}
+```
+---
+| \gThe monad transformer for Reader, ReaderT
+
+
+```
+case class ReaderT[F[_], R, A](run: R => F[A])
+
+object ReaderT {
+  implicit def ReaderTMonad[F[_], R](implicit F: Monad[F]) =
+    new Monad[ReaderT[F, R, ?]] {
+      def point[A](a: => A): ReaderT[F, R, A] =
+        ReaderT(r => F.point(a))
+
+      def bind[A, B](fa: ReaderT[F, R, A])(f: A => ReaderT[F, R, B]): ReaderT[F, R, B] =
+        ReaderT(r => fa.run(r) ???) // have an F[A], need an F[B]
+    }
+}
+```
+---
+| \gThe monad transformer for Reader, ReaderT
+
+
+```
+case class ReaderT[F[_], R, A](run: R => F[A])
+
+object ReaderT {
+  implicit def ReaderTMonad[F[_], R](implicit F: Monad[F]) =
+    new Monad[ReaderT[F, R, ?]] {
+      def point[A](a: => A): ReaderT[F, R, A] =
+        ReaderT(r => F.point(a))
+
+      def bind[A, B](fa: ReaderT[F, R, A])(f: A => ReaderT[F, R, B]): ReaderT[F, R, B] =
+        ReaderT(r => F.bind(fa.run(r))(a => ???) // have an A, need an F[B]
+    }
+}
+```
+---
+| \gThe monad transformer for Reader, ReaderT
+
+
+```
+case class ReaderT[F[_], R, A](run: R => F[A])
+
+object ReaderT {
+  implicit def ReaderTMonad[F[_], R](implicit F: Monad[F]) =
+    new Monad[ReaderT[F, R, ?]] {
+      def point[A](a: => A): ReaderT[F, R, A] =
+        ReaderT(r => F.point(a))
+
+      def bind[A, B](fa: ReaderT[F, R, A])(f: A => ReaderT[F, R, B]): ReaderT[F, R, B] =
+        ReaderT(r => F.bind(fa.run(r))(a => f(a) ??? )) // have a ReaderT[F, R, B], need an F[B]
+    }
+}
+```
+---
+| \gThe monad transformer for Reader, ReaderT
+
+
+```
+case class ReaderT[F[_], R, A](run: R => F[A])
+
+object ReaderT {
+  implicit def ReaderTMonad[F[_], R](implicit F: Monad[F]) =
+    new Monad[ReaderT[F, R, ?]] {
+      def point[A](a: => A): ReaderT[F, R, A] =
+        ReaderT(r => F.point(a))
+
+      def bind[A, B](fa: ReaderT[F, R, A])(f: A => ReaderT[F, R, B]): ReaderT[F, R, B] =
+        ReaderT(r => F.bind(fa.run(r))(a => f(a).run(r)))
+    }
+}
+```
+---
+| \gAnd now we can stack effects!
+
+```
+type StdGen = Double
+def random(g: StdGen): (StdGen, Double) = (g*g, g)
+def randomSt: State[StdGen, Double] = State(random)
+
+--
+val takeRandom: ReaderT[State[StdGen, ?], String, String] = 
+  ReaderT[State[StdGen, ?], String, String](s => 
+    randomSt.map(p => 
+      s.take(math.ceil(s.length * p).toInt)
+    )
+  )
+
+--
+val takeRandom2: ReaderT[State[StdGen, ?], String, (String, String)] = 
+  for {
+    r1 <- takeRandom
+    r2 <- takeRandom
+  } yield (r1, r2)
+
+--
+val st: State[StdGen, (String, String)] = 
+  takeRandom2.run("hello world")
+--
+
+st.run(0.1)
+```
+---
+| \gWhat's next?
+
+Major pain points when working with monad transformers come from construction
+
+--
+```
+val r = Reader((s: String) => s.length)
+```
+
+--
+```
+val o = OptionT[Reader[String, ?], Int](r.map(some))
+```
+
+--
+```
+o.run.run("hello world")
+```
+---
+| \rManual construction is a PITA!
+
+Let's abstract over it!
+
+--
+We want, for any monad transformer, \*T\s, to be able to "lift" any computation, \*F[A]\s,  into it, i.e. \*F[A] => T[F, A]\s
+
+--
+```
+trait MonadTrans[T[_[_], _]] {
+--
+  def liftM[F[_]: Monad, A](fa: F[A]): T[F, A]
+}
+```
+---
+| \gMonadTrans for OptionT
+
+```
+implicit val OptionTMonadTrans =
+  new MonadTrans[OptionT] {
+    def liftM[F[_]: Monad, A](fa: F[A]): OptionT[F, A] =
+      OptionT(fa.map(some))
+  }
+```
+---
+| \gMonadTrans for StateT
+
+```
+implicit def StateTMonadTrans[S] =
+  new MonadTrans[StateT[?[_], S, ?]] {
+    def liftM[F[_]: Monad, A](fa: F[A]): StateT[F, S, A] =
+      StateT(s => fa.map(a => (s, a)))
+  }
+```
+---
+| \gMonadTrans
+
+--
+```
+val r = Reader((s: String) => s.length)
+```
+
+--
+```
+val o = r.liftM[OptionT]
+```
+
+--
+```
+o.run.run("hello world")
+```
+---
+| \gBut what about deeper stacks?
+
+```
+type S1[A] = State[Double, A]
+type S0[A] = ReaderT[S1, String, A]
+type S[A] = ReaderT[S0, Int, A]
+```
+
+--
+```
+val ssquared: S1[Double] = State((s: Double) => (s, s*s))
+```
+
+--
+```
+val ssquaredManual: S[Double] = 
+  ReaderT[S0, Int, Double](_ => ReaderT[S1, String, Double](_ => ssquared))
+```
+
+--
+```
+val ssquaredLift: S[Double] =
+  ssquared.liftM[ReaderT[?[_], String, ?]].liftM[ReaderT[?[_], Int, ?]]
+```
+
+
+---
+| \gSo much lifting! My legs and back hurt!
+
+mtl to the rescue!
+
+--
+Abstract even more by recognizing what operations are essential to the algebra of the types.
+
+---
+| \gGeneralizing Reader/ReaderT
+
+Reader/ReaderT are defined completely by two operations:
+
+--
+  * The ability to \*ask\s for the environment value
+
+--
+  * The ability to run a computation with a locally modified environment value
+
+--
+```
+trait MonadReader[F[_], R] {
+  def ask: F[R]
+
+  def local[A](f: R => R)(fa: F[A]): F[A]
+}
+```
+---
+| \gGeneralizing Reader/ReaderT
+
+MonadReader instance for ReaderT
+
+```
+implicit def ReaderTMonadReader[F[_], R](implicit F: Monad[F]) =
+--
+  new MonadReader[ReaderT[F, R, ?], R] {
+--
+    def ask: ReaderT[F, R, R] = 
+--
+      ReaderT(r => F.point(r))
+
+--
+    def local[A](f: R => R)(fa: ReaderT[F, R, A]): ReaderT[F, R, A] =
+
+
+```
+---
+| \gGeneralizing Reader/ReaderT
+
+MonadReader instance for ReaderT
+
+```
+implicit def ReaderTMonadReader[F[_], R](implicit F: Monad[F]) =
+  new MonadReader[ReaderT[F, R, ?], R] {
+    def ask: ReaderT[F, R, R] = 
+      ReaderT(r => F.point(r))
+
+    def local[A](f: R => R)(fa: ReaderT[F, R, A]): ReaderT[F, R, A] =
+      ReaderT(r => fa.run(f(r)))
+  }
+```
+---
+| \gGeneralizing Reader/ReaderT
+
+MonadReader instance for StateT
+
+--
+```
+implicit def StateTMonadReader[F[_]: Functor, R, S](implicit F: MonadReader[F, R]) =
+
+
+
+
+
+
+
+```
+---
+| \gGeneralizing Reader/ReaderT
+
+MonadReader instance for StateT
+
+```
+implicit def StateTMonadReader[F[_]: Functor, R, S](implicit F: MonadReader[F, R]) =
+  new MonadReader[StateT[F, S, ?], R] {
+
+
+
+
+
+  }
+```
+---
+| \gGeneralizing Reader/ReaderT
+
+MonadReader instance for StateT
+
+```
+implicit def StateTMonadReader[F[_]: Functor, R, S](implicit F: MonadReader[F, R]) =
+  new MonadReader[StateT[F, S, ?], R] {
+    def ask: StateT[F, S, R] =
+
+
+
+
+  }
+```
+---
+| \gGeneralizing Reader/ReaderT
+
+MonadReader instance for StateT
+
+```
+implicit def StateTMonadReader[F[_]: Functor, R, S](implicit F: MonadReader[F, R]) =
+  new MonadReader[StateT[F, S, ?], R] {
+    def ask: StateT[F, S, R] =
+      StateT(???) // need an S => F[(S, R)]
+
+
+
+  }
+```
+---
+| \gGeneralizing Reader/ReaderT
+
+MonadReader instance for StateT
+
+```
+implicit def StateTMonadReader[F[_]: Functor, R, S](implicit F: MonadReader[F, R]) =
+  new MonadReader[StateT[F, S, ?], R] {
+    def ask: StateT[F, S, R] =
+      StateT(s => ???) // need an F[(S, R)]
+
+
+
+  }
+```
+---
+| \gGeneralizing Reader/ReaderT
+
+MonadReader instance for StateT
+
+```
+implicit def StateTMonadReader[F[_]: Functor, R, S](implicit F: MonadReader[F, R]) =
+  new MonadReader[StateT[F, S, ?], R] {
+    def ask: StateT[F, S, R] =
+      StateT(s => F.ask ???) // we have an F[R], need an F[(S, R)]
+
+
+
+  }
+```
+---
+| \gGeneralizing Reader/ReaderT
+
+MonadReader instance for StateT
+
+```
+implicit def StateTMonadReader[F[_]: Functor, R, S](implicit F: MonadReader[F, R]) =
+  new MonadReader[StateT[F, S, ?], R] {
+    def ask: StateT[F, S, R] =
+      StateT(s => F.ask.map(r => (s, r)))
+
+
+
+  }
+```
+---
+| \gGeneralizing Reader/ReaderT
+
+MonadReader instance for StateT
+
+```
+implicit def StateTMonadReader[F[_]: Functor, R, S](implicit F: MonadReader[F, R]) =
+  new MonadReader[StateT[F, S, ?], R] {
+    def ask: StateT[F, S, R] =
+      StateT(s => F.ask.map(r => (s, r)))
+
+    def local[A](f: R => R)(fa: StateT[F, S, A]): StateT[F, S, A] =
+
+  }
+```
+---
+| \gGeneralizing Reader/ReaderT
+
+MonadReader instance for StateT
+
+```
+implicit def StateTMonadReader[F[_]: Functor, R, S](implicit F: MonadReader[F, R]) =
+  new MonadReader[StateT[F, S, ?], R] {
+    def ask: StateT[F, S, R] =
+      StateT(s => F.ask.map(r => (s, r)))
+
+    def local[A](f: R => R)(fa: StateT[F, S, A]): StateT[F, S, A] =
+      StateT(???) // need an S => F[(S, A)]
+  }
+```
+---
+| \gGeneralizing Reader/ReaderT
+
+MonadReader instance for StateT
+
+```
+implicit def StateTMonadReader[F[_]: Functor, R, S](implicit F: MonadReader[F, R]) =
+  new MonadReader[StateT[F, S, ?], R] {
+    def ask: StateT[F, S, R] =
+      StateT(s => F.ask.map(r => (s, r)))
+
+    def local[A](f: R => R)(fa: StateT[F, S, A]): StateT[F, S, A] =
+      StateT(s => ???) // need an F[(S, A)]
+  }
+```
+---
+| \gGeneralizing Reader/ReaderT
+
+MonadReader instance for StateT
+
+```
+implicit def StateTMonadReader[F[_]: Functor, R, S](implicit F: MonadReader[F, R]) =
+  new MonadReader[StateT[F, S, ?], R] {
+    def ask: StateT[F, S, R] =
+      StateT(s => F.ask.map(r => (s, r)))
+
+    def local[A](f: R => R)(fa: StateT[F, S, A]): StateT[F, S, A] =
+      StateT(s => F.local(f)(???)) // need an F[(S, A)]
+  }
+```
+---
+| \gGeneralizing Reader/ReaderT
+
+MonadReader instance for StateT
+
+```
+implicit def StateTMonadReader[F[_]: Functor, R, S](implicit F: MonadReader[F, R]) =
+  new MonadReader[StateT[F, S, ?], R] {
+    def ask: StateT[F, S, R] =
+      StateT(s => F.ask.map(r => (s, r)))
+
+    def local[A](f: R => R)(fa: StateT[F, S, A]): StateT[F, S, A] =
+      StateT(s => F.local(f)(fa.run(s)))
+  }
+```
+---
+| \gGeneralizing State/StateT
+
+State/StateT are completely defined by two operations
+
+--
+  * An operation to get the current state
+
+--
+  * An operation to put a new state
+
+--
+```
+trait MonadState[F[_], S] {
+  def get: F[S]
+
+  def put(s: S): F[Unit]
+}
+```
+---
+| \gGeneralizing State/StateT
+
+MonadState instance for StateT
+
+```
+implicit def StateTMonadState[F[_], S](implicit F: Monad[F]) = 
+  new MonadState[StateT[F, S, ?], S] {
+--
+    def get: StateT[F, S, S] =
+--
+      StateT(s => F.point((s, s)))
+
+--
+    def put(s: S): StateT[F, S, Unit] =
+
+
+```
+---
+| \gGeneralizing State/StateT
+
+MonadState instance for StateT
+
+```
+implicit def StateTMonadState[F[_], S](implicit F: Monad[F]) = 
+  new MonadState[StateT[F, S, ?], S] {
+    def get: StateT[F, S, S] =
+      StateT(s => F.point((s, s)))
+
+    def put(s: S): StateT[F, S, Unit] =
+      StateT(_ => F.point((s, ())))
+  }
+```
+---
+| \gGeneralizing State/StateT
+
+MonadState instance for ReaderT
+
+```
+implicit def ReaderTMonadState[F[_]: Monad, S, R](implicit F: MonadState[F, S]) =
+  new MonadState[ReaderT[F, R, ?], S] {
+--
+    def get: ReaderT[F, R, S] =
+--
+      ReaderT(r => F.get)
+
+--
+    def put(s: S): ReaderT[F, R, Unit] =
+
+
+```
+---
+| \gGeneralizing State/StateT
+
+MonadState instance for ReaderT
+
+```
+implicit def ReaderTMonadState[F[_]: Monad, S, R](implicit F: MonadState[F, S]) =
+  new MonadState[ReaderT[F, R, ?], S] {
+    def get: ReaderT[F, R, S] =
+      ReaderT(r => F.get)
+
+    def put(s: S): ReaderT[F, R, Unit] =
+      ReaderT(r => F.put(s))
+  }
+```
+---
+| \gYay we've generalized
+
+What does all this get us?
+
+--
+```
+type S1[A] = State[Double, A]
+type S0[A] = ReaderT[S1, String, A]
+type S[A] = ReaderT[S0, Int, A]
+
+val ssquared: S1[Double] = State((s: Double) => (s, s*s))
+```
+
+--
+```
+def ssquared[F[_]: Functor](implicit F: MonadState[F, Double]): F[Double] = 
+  F.get.map(s => s * s)
+```
+
+--
+```
+ssquared[S1].run(2)
+```
+--
+```
+ssquared[S0].run("thrown away").run(4)
+```
+--
+```
+ssquared[S].run(0).run("thrown away").run(16)
+```
+---
+| \gApplying this idea in amkt
+
+We had this
+
+```
+type WebApp[A] = ReaderT[IO, ApplicationContext, A]
+```
+
+where \*ApplicationContext\s was a bit of a "sin bin".
+
+--
+Then we defined instances we needed
+
+```
+implicit def AppContextMPlugin: MPlugin[WebApp] = ???
+```
+---
+| \gInstead, we can take a page out of mtl book
+
+First, we can determine what basic operations we have.
+
+--
+Let's start with Mongo
+
+--
+```
+trait MonadMongo[F[_]] {
+--
+  def insert(collection: DbCollection, obj: MongoDBObject): M[Unit]
+--
+  def save(collection: DbCollection, o: MongoDBObject): M[Unit]
+--
+  // etc.
+}
+```
+---
+| \gInstead, we can take a page out of mtl book
+
+Define a monad transformer
+
+--
+```
+case class MongoT[M[_], A](run: MongoContext => M[A])
+```
+
+--
+And implement the type-class for it
+
+```
+object MongoT {
+  implicit def MongoTMonadMongo[F[_]: MonadIO]: MonadMongo[MongoT[F, ?]] =
+    new MonadMongo[MongoT[F, ?]] {
+      def insert(collection: DbCollection, obj: MongoDBObject): MongoT[F, Unit] =
+        MongoT(ctx => IO(ctx.db(collection.name).insert(obj)).liftIO[F])
+
+      // etc.
+    }
+}
+```
+
+---
+| \gInstead, we can take a page out of mtl book
+
+Next, define a monad transformer for our type-classes, e.g. \*MPlugin\s
+
+--
+```
+case class MongoStoreT[F[_], A](run: F[A])
+```
+
+--
+And our type-classes
+
+```
+object MongoStoreT {
+  implicit def MongoStoreTMPlugin[F[_]: MonadMongo] =
+    new MPlugin[MongoStoreT[F, ?]] {
+      // 
+    }
+}
+```
+---
+| \gInstead, we can take a page out of mtl book
+
+Now we define a monad transformer for our application
+
+--
+```
+case class AppT[F[_], A](run: F[A])
+```
+
+--
+And build our stack
+
+```
+type WA2[A] = IO[A]
+--
+type WA1[A] = MongoT[WA2, A]
+--
+type WA0[A] = MongoStoreT[WA1, A]
+--
+type WebApp[A] = AppT[WA0, A]
+```
+---
+| \gSome nice properties fall out
+
+--
+* More testable
+
+--
+  * we can test the MonadMongo[MongoT[F, ?]] instance using a real mongodb
+
+--
+  * we can test the MPlugin[MongoStoreT[F, ?]] instance using a fake MonadMongo instance
+
+--
+* Easily extended
+
+--
+  * we can add additional effects by composing with additional monad transformers
+
+--
+  * we can "decorate" our instances to add additional features
+---
+| \gExtend with additional effects
+
+Want to add search? Let's define the basic operations
+
+--
+```
+trait MonadSolr[F[_]] {
+  def index(doc: SolrInputDocument): F[Unit]
+  def query(q: SolrQuery): F[QueryResponse]
+  // etc.
+}
+```
+---
+| \gExtend with additional effects
+
+Define a monad transformer
+
+--
+```
+case class SolrT[F[_], A](run: SolrServer => F[A])
+```
+
+--
+And the instance
+
+```
+implicit def SolrTMonadSolr[F[_]: MonadIO] = 
+  new MonadSolr[SolrT[F, ?]] {
+    def index(doc: SolrInputDocument): SolrT[F, Unit] =
+      SolrT(srv => IO(srv.index(doc)).liftIO[F])
+
+    // etc.
+  }
+```
+---
+| \gExtend with additional effects
+
+And add it to our stack. We had
+
+--
+```
+type WA2[A] = IO[A]
+type WA1[A] = MongoT[WA2, A]
+type WA0[A] = MongoStoreT[WA1, A]
+type WebApp[A] = AppT[WA0, A]
+```
+
+--
+Now we'll have
+
+```
+type WA3[A] = IO[A]
+type WA2[A] = MongoT[WA3, A]
+type WA1[A] = SolrT[WA2, A]
+type WA0[A] = MongoStoreT[WA1, A]
+type WebApp[A] = AppT[WA0, A]
+```
+
+---
+| \gExtend with additional effects
+
+We can define our \*MSearch\s instance for \*AppT\s
+
+```
+implicit AppTMSearch[F[_]: MonadSolr] = 
+  new MSearch[AppT[F, ?]] {
+    def updateIndex(p: Plugin): AppT[F, Unit] =
+      AppT(MonadSolr[F].index(createPluginDoc(p)))
+
+    // etc.
+  }
+```
+---
+| \gExtend with additional effects
+
+Or create a \*SolrSearchT\s monad transformer analagous to \*MongoStoreT\s
+
+--
+```
+case class SolrSearchT[F[_], A](run: F[A])
+
+implicit SolrSearchTMSearch[F[_]: MonadSolr] = 
+  new MSearch[SolrSearchT[F, ?]] {
+    def updateIndex(p: Plugin): SolrSearchT[F, Unit] =
+      SolrSearchT(MonadSolr[F].index(createPluginDoc(p)))
+
+    // etc.
+  }
+```
+
+--
+And our stack would be
+
+```
+type WA4[A] = IO[A]
+type WA3[A] = MongoT[WA4, A]
+type WA2[A] = SolrT[WA3, A]
+type WA1[A] = MongoStoreT[WA2, A]
+type WA0[A] = SolrSearchT[WA1, A]
+type WebApp[A] = AppT[WA0, A]
+```
+---
+| \gDecorating to add features
+
+Need to gather metrics? Create a new monad transformer
+
+--
+```
+case class MetricsT[F[_], A](run: Metrics => F[A])
+```
+
+--
+And create "decorator" instances for what you want to instrument
+
+```
+implicit def MetricsTMonadMongo[F[_]: MonadMongo] = 
+  new MonadMongo[MetricsT[F, ?]] {
+    def insert(c: DbCollection, o: MongoDBObject): MetricsT[F, Unit] =
+      MetricsT(metrics =>
+        metrics.time(mongoInsert(c))(MonadMongo[F].insert(c, o))
+      )
+
+    // etc.
+  }
+```
+---
+| \gDecorating to add features
+
+Then add it to the stack
+
+--
+```
+type WA5[A] = IO[A]
+type WA4[A] = MongoT[WA5, A]
+type WA3[A] = SolrT[WA4, A]
+type WA2[A] = MetricsT[WA3, A]
+type WA1[A] = MongoStoreT[WA2, A]
+type WA0[A] = SolrSearchT[WA1, A]
+type WebApp[A] = AppT[WA0, A]
+```
+
+--
+Order is important!
+---
+| \gDifferent stacks for different tasks
+
+We want to collect metrics for the webapp. 
+--
+We don't want them for scripts.
+--
+Define a different stack.
+
+--
+```
+type SA4[A] = IO[A]
+type SA3[A] = MongoT[SA4, A]
+type SA2[A] = SolrT[SA3, A]
+type SA1[A] = MongoStoreT[SA2, A]
+type SA0[A] = SolrSearchT[SA1, A]
+type ScriptApp[A] = AppT[SA0, A]
+```
+
+---
+| \gDifferent stacks for different tasks
+
+Additional bonus: if we write scripts to use only \*MonadMongo\s and friends, they can be run using
+  any stack that provides the needed instances.
+
+--
+As an example, \*ForcePluginUpdate\s currently looks like
+
+```
+object ForcePluginUpdate extends SafeScriptApp {
+  val q = PluginQuery(searchDraftVersions = true)
+
+  def scriptM(args: ImmutableArray[String]): ScriptApp[Unit] =
+    findPlugins[ScriptApp](q, QueryBounds.unlimited).
+      flatMap {
+        _.xs.traverse(p => updatePlugin[ScriptApp](p, p)).as(())
+      }
+}
+```
+
+--
+We can generalize this to any \*F[_]\s that has an \*MPlugin\s instance
+---
+| \gDifferent stacks for different tasks
+
+Updated, \*ForcePluginUpdate\s would look like
+
+```
+object ForcePluginUpdate extends SafeScriptApp {
+  val q = PluginQuery(searchDraftVersions = true)
+
+  def apply[F[_]: Monad](implicit plugins: MPlugin[F]): F[Unit] =
+    plugins.findPlugins(q, QueryBounds.unlimited).
+      flatMap {
+        _.xs.traverse(p => plugins.updatePlugin(p, p)).as(())
+      }
+
+  def scriptM(args: ImmutableArray[String]): ScriptApp[Unit] =
+    ForcePluginUpdate[ScriptApp]
+}
+```
+
+--
+Where we want to embed it in the webapp, we would use
+
+```
+val asWebApp = ForcePluginUpdate[WebApp]
+```
+---
+| \gFin
