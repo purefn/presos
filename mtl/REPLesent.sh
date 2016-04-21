@@ -4,7 +4,7 @@ set -ue
 
 PRESO="mtl.txt"
 
-TMPFILE=$(mktemp --suffix=$PRESO)
+TMPFILE=$(mktemp)
 trap "rm -f $TMPFILE; exit" INT TERM EXIT
 
 echo "val replesent = REPLesent(input=\"$PRESO\", intp=\$intp);import replesent._;import scalaz._;import Scalaz._;h;" >> $TMPFILE
