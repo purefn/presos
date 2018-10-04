@@ -1,0 +1,12 @@
+#! /usr/bin/env nix-shell
+#! nix-shell -i bash -p pandoc
+
+set -eux
+
+pandoc --verbose      \
+  --to=slidy          \
+  --variable=slidy-url:Slidy2 \
+  --standalone        \
+  --self-contained    \
+  --output=pills.html \
+  pills.md

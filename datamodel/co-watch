@@ -1,0 +1,10 @@
+#! /usr/bin/env nix-shell
+#! nix-shell -i bash -p inotify-tools
+
+inotifywait -e close_write,moved_to,create -m . |
+while read -r directory events filename; do
+  if [ "$filename" = "datamodel.md" ]; then
+    echo "Change to $filename detected, rebuilding $(basename $filename .md).html"
+    ./co
+  fi
+done
