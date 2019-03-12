@@ -24,6 +24,10 @@ Rich Wallace
   </p>
   <p class="date">Oct 4, 2018</p>
 </div>
+<div class="slide section level1">
+
+<p>% updated Mar 5, 2019</p>
+</div>
 <div id="in-the-beginning" class="slide section level1">
 <h1>in the beginning</h1>
 <p>life was simple. plugins were</p>
@@ -103,17 +107,23 @@ Rich Wallace
 </ul>
 </div>
 </div>
-<div id="cloudapp" class="slide section level1">
-<h1>CloudApp</h1>
+<div id="connectapp" class="slide section level1">
+<h1>ConnectApp</h1>
 <div>
 <ul class="incremental">
 <li><p><em>must</em> have a descriptor uploaded</p></li>
 <li><p><em>should</em> have a URI for where the descriptor came from (we’d like to make that should a must but we have older Connect apps that don’t have them because we didn’t always require them)</p></li>
 <li><p><em>can</em> have a list of scopes</p></li>
-<li><p><em>must</em> specify compatibility with at least one Cloud application (versioning doesn’t matter because it’s Cloud)</p></li>
 <li><p><em>must</em> be free or paid via Atlassian</p>
 <ul class="incremental">
-<li>if it’s paid via Atlassian, it must have a link to documentation</li>
+<li><p>if it’s free</p>
+<ul class="incremental">
+<li><em>must</em> specify compatibility with at least one Server and/or Cloud applications</li>
+</ul></li>
+<li><p>if it’s paid via Atlassian, it must have a link to documentation</p>
+<ul class="incremental">
+<li><em>must</em> specify compatibility with at least one Cloud application</li>
+</ul></li>
 </ul></li>
 </ul>
 </div>
@@ -147,6 +157,12 @@ Rich Wallace
 </ul></li>
 </ul>
 </div>
+</div>
+<div id="datacenterapp" class="slide section level1">
+<h1>DataCenterApp</h1>
+<ul>
+<li>has the same invariants as <code>ServerApp</code>s</li>
+</ul>
 </div>
 <div id="instructionalapp" class="slide section level1">
 <h1>InstructionalApp</h1>
@@ -195,7 +211,7 @@ Rich Wallace
   type Public[A] = A
 }</code></pre>
 <ul class="incremental">
-<li><code>CloudApp[Private, ...]</code> vs. <code>CloudApp[Public, ...]</code></li>
+<li><code>ConnectApp[Private, ...]</code> vs. <code>ConnectApp[Public, ...]</code></li>
 </ul>
 </div>
 </div>
@@ -203,7 +219,7 @@ Rich Wallace
 <h1>modeling payment type</h1>
 <div>
 <p>we also parameterize payment type</p>
-<pre><code>  object CloudApp {
+<pre><code>  object ConnectApp {
     // snip
     object Paid {
       final case class Free(doc: Option[URI])
@@ -211,17 +227,17 @@ Rich Wallace
     }
   }</code></pre>
 <ul class="incremental">
-<li><code>CloudApp[..., Free]</code> vs. <code>CloudApp[..., ViaAtlassian]</code> vs. <code>CloudApp[..., Free \/ ViaAtlassian]</code></li>
+<li><code>ConnectApp[..., Free]</code> vs. <code>ConnectApp[..., ViaAtlassian]</code> vs. <code>ConnectApp[..., Free \/ ViaAtlassian]</code></li>
 </ul>
 </div>
 </div>
-<div id="app-sum-type" class="slide section level1">
-<h1><code>App</code> sum type</h1>
+<div id="what-is-an-app" class="slide section level1">
+<h1>What is an <code>App</code>?</h1>
 <div>
 <p>An <code>App</code> can be one of many things</p>
 <ul class="incremental">
-<li><p><code>CloudApp[Private, CloudApp.Paid.Free \/ CloudApp.Paid.ViaAtlassian]</code></p></li>
-<li><p><code>CloudApp[Public, CloudApp.Paid.Free \/ CloudApp.Paid.ViaAtlassian]</code></p></li>
+<li><p><code>ConnectApp[Private, ConnectApp.Paid.Free \/ ConnectApp.Paid.ViaAtlassian]</code></p></li>
+<li><p><code>ConnectApp[Public, ConnectApp.Paid.Free \/ ConnectApp.Paid.ViaAtlassian]</code></p></li>
 <li><p><code>ServerApp[Private, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor \/ ServerApp.Paid.ViaAtlassian]</code></p></li>
 <li><p><code>ServerApp[Public, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor \/ ServerApp.Paid.ViaAtlassian]</code></p></li>
 <li><p><code>DataCenterApp[Private, DataCenterApp.Paid.Free \/ DataCenterApp.Paid.ViaVendor \/ DataCenterApp.Paid.ViaAtlassian]</code></p></li>
@@ -232,6 +248,20 @@ Rich Wallace
 <li><p><code>WorkflowApp[Public, WorkflowApp.Paid.Free \/ WorkflowApp.Paid.ViaVendor]</code></p></li>
 </ul>
 </div>
+</div>
+<div id="representing-apps" class="slide section level1">
+<h1>representing <code>App</code>s</h1>
+<pre><code>final case class App(value: AppF[Public] \/ AppF[Private])
+
+sealed trait AppF[F[_]]
+object AppF {
+  case class Server[S[_]](app: ServerApp[S, ServerApp.Paid]) extends AppF[S]
+  case class DataCenter[S[_]](app: DataCenterApp[S, DataCenterApp.Paid]) extends AppF[S]
+  case class Connect[S[_]](app: ConnectApp[S, ConnectApp.Paid]) extends AppF[S]
+  case class Instructional[S[_]](app: InstructionalApp[S, InstructionalApp.Paid])
+  case class Workflow[S[_]](app: WorkflowApp[S, WorkflowApp.Paid]) extends AppF[S]
+}</code></pre>
+<p>:::</p>
 </div>
 <div id="introducing-applisting" class="slide section level1">
 <h1>introducing <code>AppListing</code></h1>
@@ -253,6 +283,9 @@ Rich Wallace
 <li>if it contains PvA apps, it <em>can</em> have draft pricing for that type of app</li>
 </ul></li>
 <li><p>when an app listing contains Server or Data Center apps, it <em>must</em> contain compatibility history</p></li>
+<li><p><em>can</em> have a logo</p></li>
+<li><p><em>can</em> have a tag line</p></li>
+<li><p><em>can</em> have a summary</p></li>
 </ul>
 </div>
 </div>
@@ -288,76 +321,137 @@ Rich Wallace
 </ul>
 </div>
 </div>
-<div id="representing-privateapplistings" class="slide section level1">
-<h1>representing <code>PrivateAppListing</code>s</h1>
-<div>
-<ul class="incremental">
-<li><p>optional values are represented as <code>Status.Private</code>, i.e. <code>Option</code></p></li>
-<li><p>app versions are represented as</p></li>
-</ul>
-</div>
-</div>
 <div id="representing-privateapplisting-versions" class="slide section level1">
 <h1>representing <code>PrivateAppListing</code> versions</h1>
 <div>
 <ul class="incremental">
-<li><p>a collection of private cloud apps that are free</p>
+<li><p>optional values are represented as <code>Status.Private</code>, i.e. <code>Option</code></p></li>
+<li><p>means we end up with</p>
 <ul class="incremental">
-<li><code>NonEmptyList[CloudApp[Private, CloudApp.Paid.Free]]</code></li>
+<li><p><code>summary: Option[String]</code></p></li>
+<li><p><code>details: Option[LegacyPluginDetails \&amp;/ String]</code></p></li>
+</ul></li>
+<li><p>why not also <code>logo: Option[Logo]</code></p>
+<ul class="incremental">
+<li>legacy data :(</li>
+</ul></li>
+</ul>
+</div>
+</div>
+<div id="representing-privateapplisting-connect-versions" class="slide section level1">
+<h1>representing <code>PrivateAppListing</code> Connect versions</h1>
+<div>
+<ul class="incremental">
+<li><p>a collection of private connect apps that are free</p>
+<ul class="incremental">
+<li><code>type PrivateFreeConnectApps = NonEmptyList[ConnectApp[Private, ConnectApp.Paid.Free]]</code></li>
 </ul></li>
 <li><p>or paid via atlassian</p>
 <ul class="incremental">
-<li><code>NonEmptyList[CloudApp[Private, CloudApp.Paid.PaidViaAtlassian]]</code></li>
+<li><code>type PrivatePvAConnectApps = NonEmptyList[ConnectApp[Private, ConnectApp.Paid.PaidViaAtlassian]]</code></li>
 </ul></li>
 <li><p>together, that is</p>
 <ul class="incremental">
-<li><code>NonEmptyList[CloudApp[Private, CloudApp.Paid.Free]] \&amp;/ NonEmptyList[CloudApp[Private, CloudApp.Paid.PaidViaAtlassian]]</code></li>
+<li><code>type PrivateConnectApps = PrivateFreeConnectApps \&amp;/ PrivatePvAConnectApps</code></li>
+</ul></li>
+</ul>
+</div>
+</div>
+<div id="representing-privateapplisting-server-versions" class="slide section level1">
+<h1>representing <code>PrivateAppListing</code> Server versions</h1>
+<div>
+<ul class="incremental">
+<li><p>a collection of private server apps that are free or paid via vendor</p>
+<ul class="incremental">
+<li><code>type PrivateNonPvAServerApps = NonEmptyList[ServerApp[Private, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor]]</code></li>
+</ul></li>
+<li><p>or paid via atlassian</p>
+<ul class="incremental">
+<li><code>type PrivatePvAServerApps = NonEmptyList[ServerApp[Private, ServerApp.Paid.PaidViaAtlassian]]</code></li>
+</ul></li>
+<li><p>together, that is</p>
+<ul class="incremental">
+<li><code>type PrivateServerApps = PrivateNonPvAServerApps \&amp;/ PrivatePvAServerApps</code></li>
+</ul></li>
+</ul>
+</div>
+</div>
+<div id="representing-privateapplisting-datacenter-versions" class="slide section level1">
+<h1>representing <code>PrivateAppListing</code> DataCenter versions</h1>
+<div>
+<ul class="incremental">
+<li><p>a collection of private data center apps that are free or paid via vendor</p>
+<ul class="incremental">
+<li><code>type PrivateNonPvADataCenterApps = NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.Free \/ DataCenterApp.Paid.ViaVendor]]</code></li>
+</ul></li>
+<li><p>or paid via atlassian</p>
+<ul class="incremental">
+<li><code>type PrivatePvADataCenterApps = NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.PaidViaAtlassian]]</code></li>
+</ul></li>
+<li><p>together, that is</p>
+<ul class="incremental">
+<li><code>type PrivateDataCenterApps = PrivateNonPvADataCenterApps \&amp;/ PrivatePvADataCenterApps</code></li>
+</ul></li>
+</ul>
+</div>
+</div>
+<div id="representing-privateapplisting-serverdc-versions" class="slide section level1">
+<h1>representing <code>PrivateAppListing</code> Server+DC versions</h1>
+<div>
+<ul class="incremental">
+<li><p>a collection of private server and/or data center apps that are free, paid via vendor, or paid via atlassian</p></li>
+<li><p>with a compatibility history, <code>PluginCompatibilityHistory</code></p>
+<ul class="incremental">
+<li><code>type PrivateServerDataCenterApps = ( PluginCompatibilityHistory , PrivateServerApps \&amp;/ PrivateDataCenterApps )</code></li>
+</ul></li>
+</ul>
+</div>
+</div>
+<div id="representing-privateapplisting-instructional-and-workflow-versions" class="slide section level1">
+<h1>representing <code>PrivateAppListing</code> instructional and workflow versions</h1>
+<div>
+<ul class="incremental">
+<li><p>instructional apps are easy</p>
+<ul class="incremental">
+<li><code>type PrivateInstructionalApps = NonEmptyList[InstructionalApp[Private, InstructionalApp.Paid]]</code></li>
+</ul></li>
+<li><p>so are workflow apps</p>
+<ul class="incremental">
+<li><code>type PrivateWorkflowApps = NonEmptyList[WorkflowApp[Private, WorkflowApp.Paid]]</code></li>
 </ul></li>
 </ul>
 </div>
 </div>
 <div id="representing-privateapplisting-versions-1" class="slide section level1">
 <h1>representing <code>PrivateAppListing</code> versions</h1>
-<div>
-<ul class="incremental">
-<li><p>a collection of private server and/or data center apps that are free, paid via vendor, or paid via atlassian</p>
-<ul class="incremental">
-<li><p><code>NonEmptyList[ServerApp[Private, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor]] \&amp;/ NonEmptyList[ServerApp[Private, ServerApp.Paid.ViaAtlassian]]</code></p></li>
-<li><p><code>NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.Free \/ DataCenterApp.Paid.ViaVendor]] \&amp;/ NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.ViaAtlassian]]</code></p></li>
-</ul></li>
-<li><p>with a compatibility history, <code>PluginCompatibilityHistory</code></p>
-<ul class="incremental">
-<li><code>( PluginCompatibilityHistory , NonEmptyList[ServerApp[Private, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor]] \&amp;/ NonEmptyList[ServerApp[Private, ServerApp.Paid.ViaAtlassian]] \&amp;/   NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.Free \/ DataCenterApp.Paid.ViaVendor]] \&amp;/ NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.ViaAtlassian]] )</code></li>
-</ul></li>
-</ul>
-</div>
+<p>All together we have</p>
+<pre><code>type PrivateApps =
+  PrivateConnectApps
+    \&amp;/ PrivateServerDataCenterApps
+    \&amp;/ PrivateInstructionalApps
+    \&amp;/ PrivateWorkflowApps</code></pre>
 </div>
 <div id="representing-privateapplisting-versions-2" class="slide section level1">
 <h1>representing <code>PrivateAppListing</code> versions</h1>
-<div>
-<ul class="incremental">
-<li><p>instructional apps are easy <code>NonEmptyList[InstructionalApp[Private, InstructionalApp.Paid]]</code></p></li>
-<li><p>so are workflow apps <code>NonEmptyList[WorkflowApp[Private, WorkflowApp.Paid]]</code></p></li>
-<li><p>when we combine them together we get</p></li>
-</ul>
-</div>
-</div>
-<div id="representing-privateapplisting-versions-3" class="slide section level1">
-<h1>representing <code>PrivateAppListing</code> versions</h1>
-<pre><code>NonEmptyList[CloudApp[Private, CloudApp.Paid.Free]] \&amp;/ NonEmptyList[CloudApp[Private, CloudApp.Paid.PaidViaAtlassian]] \&amp;/
-  ( PluginCompatibilityHistory
-  , NonEmptyList[ServerApp[Private, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor]] \&amp;/ NonEmptyList[ServerApp[Private, ServerApp.Paid.ViaAtlassian]] \&amp;/
-    NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.Free \/ DataCenterApp.Paid.ViaVendor]] \&amp;/ NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.ViaAtlassian]]
-  ) \&amp;/
-  NonEmptyList[InstructionalApp[Private, InstructionalApp.Paid]] \&amp;/
-  NonEmptyList[WorkflowApp[Private, WorkflowApp.Paid]]</code></pre>
+<p>Which expands to</p>
+<pre><code>NonEmptyList[ConnectApp[Private, ConnectApp.Paid.Free]]
+  \&amp;/ NonEmptyList[ConnectApp[Private, ConnectApp.Paid.PaidViaAtlassian]]
+  \&amp;/
+    ( PluginCompatibilityHistory
+    , NonEmptyList[ServerApp[Private, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor]]
+        \&amp;/ NonEmptyList[ServerApp[Private, ServerApp.Paid.ViaAtlassian]]
+        \&amp;/ NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.Free \/ DataCenterApp.Paid.ViaVendor]]
+        \&amp;/ NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.ViaAtlassian]]
+    )
+  \&amp;/ NonEmptyList[InstructionalApp[Private, InstructionalApp.Paid]]
+  \&amp;/ NonEmptyList[WorkflowApp[Private, WorkflowApp.Paid]]</code></pre>
 </div>
 <div id="representing-publicapplistings" class="slide section level1">
 <h1>representing <code>PublicAppListing</code>s</h1>
 <div>
 <ul class="incremental">
-<li><p>required values are represented as <code>Status.Public</code>, i.e. <code>Id[A]</code>, i.e. <code>A</code></p></li>
-<li><p>each app type can be different states</p>
+<li><p>required values are represented as <code>Status.Public</code>, i.e. <code>Id[A]</code>, i.e. <code>A</code></p></li>
+<li><p>each app type can have different states</p>
 <ul class="incremental">
 <li><p>zero or more private</p></li>
 <li><p>has a submitted app that is not paid via Atlassian</p></li>
@@ -374,52 +468,100 @@ Rich Wallace
 <p>private apps are easy, we just reuse types from <code>PrivateAppListing</code></p>
 </div>
 </div>
-<div id="representing-publicapplisting-versions-1" class="slide section level1">
-<h1>representing <code>PublicAppListing</code> versions</h1>
+<div id="representing-publicapplisting-submitted-versions" class="slide section level1">
+<h1>representing <code>PublicAppListing</code> submitted versions</h1>
 <div>
 <ul class="incremental">
-<li><p>submitted, non paid via Atlassian apps are a little more interesting</p></li>
-<li><p>they can also have private apps</p></li>
-<li><p>those private apps can be non paid via Atlassian or paid via Atlassian</p></li>
-<li><p>when we have paid via Atlassian, it can have draft pricing</p></li>
+<li><p>an app submitted for approval can be</p>
+<ul class="incremental">
+<li><p>Non-PvA</p></li>
+<li><p>PvA</p></li>
+</ul></li>
+<li><p>represent it as a sum type</p></li>
 </ul>
 </div>
 </div>
-<div id="representing-publicapplisting-versions-2" class="slide section level1">
-<h1>representing <code>PublicAppListing</code> versions</h1>
-<pre><code>final case class SubmittedNonPvA[F[_[_], _], NonPvA, PvA]
+<div id="representing-publicapplisting-submitted-versions-1" class="slide section level1">
+<h1>representing <code>PublicAppListing</code> submitted versions</h1>
+<pre><code>trait SubmittedApps[F[_[_], _], NonPvA, PvA]
+
+case class SubmittedNonPvA[F[_[_], _], NonPvA, PvA] ...
+
+case class SubmittedPvA[F[_[_], _], NonPvA, PvA] ...</code></pre>
+</div>
+<div id="representing-publicapplisting-submitted-non-pva-versions" class="slide section level1">
+<h1>representing <code>PublicAppListing</code> submitted non-PvA versions</h1>
+<div>
+<ul class="incremental">
+<li><p>a submitted, non paid via Atlassian app</p>
+<ul class="incremental">
+<li><p>must be public</p>
+<ul class="incremental">
+<li><code>submittedNonPvA: F[Public, NonPvA]</code></li>
+</ul></li>
+<li><p>can also have non-paid via Atlassian private apps</p>
+<ul class="incremental">
+<li><code>privateNonPvA: List[F[Private, NonPvA]]</code></li>
+</ul></li>
+<li><p>can also have paid via Atlassian private apps</p>
+<ul class="incremental">
+<li><p>when there are, it can have draft pricing</p></li>
+<li><p><code>privatePvA: Option[(NonEmptyList[F[Private, PvA]], Option[DraftPricing])]</code></p></li>
+</ul></li>
+</ul></li>
+</ul>
+</div>
+</div>
+<div id="representing-publicapplisting-submitted-non-pva-versions-1" class="slide section level1">
+<h1>representing <code>PublicAppListing</code> submitted non-PvA versions</h1>
+<p>Taken together</p>
+<pre><code>case class SubmittedNonPvA[F[_[_], _], NonPvA, PvA]
   ( submittedNonPvA: F[Public, NonPvA]
   , privateNonPvA: List[F[Private, NonPvA]]
   , privatePvA: Option[(NonEmptyList[F[Private, PvA]], Option[DraftPricing])]
   ) extends SubmittedApps[F, NonPvA, PvA]</code></pre>
 </div>
-<div id="representing-publicapplisting-versions-3" class="slide section level1">
+<div id="representing-publicapplisting-versions-1" class="slide section level1">
 <h1>representing <code>PublicAppListing</code> versions</h1>
 <div>
 <ul class="incremental">
 <li><p>submitted, paid via Atlassian apps</p>
 <ul class="incremental">
-<li><p>can have draft pricing</p></li>
-<li><p>can also have private apps</p></li>
-<li><p>those private apps can be non paid via Atlassian or paid via Atlassian</p></li>
+<li><p>must be public</p>
+<ul class="incremental">
+<li><code>submittedPvA: F[Public, PvA]</code></li>
+</ul></li>
+<li><p>can have draft pricing</p>
+<ul class="incremental">
+<li><code>draftPricing: Option[DraftPricing]</code></li>
+</ul></li>
+<li><p>can also have private PvA apps</p>
+<ul class="incremental">
+<li><code>privatePvA: List[F[Private, PvA]]</code></li>
+</ul></li>
+<li><p>and private Non-PvA apps</p>
+<ul class="incremental">
+<li><code>privateNonPvA: List[F[Private, NonPvA]]</code></li>
+</ul></li>
 </ul></li>
 </ul>
 </div>
 </div>
-<div id="representing-publicapplisting-versions-4" class="slide section level1">
+<div id="representing-publicapplisting-versions-2" class="slide section level1">
 <h1>representing <code>PublicAppListing</code> versions</h1>
-<pre><code>final case class SubmittedPvA[F[_[_], _], NonPvA, PvA]
-  ( submittedPvA: NonEmptyList[F[Public, PvA]]
+<p>Taken together</p>
+<pre><code>case class SubmittedPvA[F[_[_], _], NonPvA, PvA]
+  ( submittedPvA: F[Public, PvA]
   , privatePvA: List[F[Private, PvA]]
   , privateNonPvA: List[F[Private, NonPvA]]
   , draftPricing: Option[DraftPricing]
   ) extends SubmittedApps[F, NonPvA, PvA]</code></pre>
 </div>
-<div id="representing-publicapplisting-versions-5" class="slide section level1">
+<div id="representing-publicapplisting-versions-3" class="slide section level1">
 <h1>representing <code>PublicAppListing</code> versions</h1>
 <p>introduce some type aliases to make talking about submitted apps easier</p>
-<pre><code>type SubmittedCloud =
-  SubmittedApps[CloudApp, CloudApp.Paid.Free, CloudApp.Paid.ViaAtlassian]
+<pre><code>type SubmittedConnect =
+  SubmittedApps[ConnectApp, ConnectApp.Paid.Free, ConnectApp.Paid.ViaAtlassian]
 
 type SubmittedServer =
   SubmittedApps[ServerApp, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor, ServerApp.Paid.ViaAtlassian]
@@ -427,29 +569,91 @@ type SubmittedServer =
 type SubmittedDataCenter =
   SubmittedApps[DataCenterApp, DataCenterApp.Paid.Free \/ DataCenterApp.Paid.ViaVendor, DataCenterApp.Paid.ViaAtlassian]</code></pre>
 </div>
-<div id="representing-publicapplisting-versions-6" class="slide section level1">
-<h1>representing <code>PublicAppListing</code> versions</h1>
+<div id="representing-publicapplisting-approved-versions" class="slide section level1">
+<h1>representing <code>PublicAppListing</code> approved versions</h1>
 <div>
-<p>Approved apps have somewhat similar structure</p>
 <ul class="incremental">
-<li><p>we have one or more approved, non-PvA app versions</p></li>
-<li><p>we have one or more approved, non-PvA app versions, and some that have been submitted for approval to be PvA</p></li>
-<li><p>we have one or more approved PvA app versions</p></li>
+<li><p>when there are approved apps we could</p>
+<ul class="incremental">
+<li><p>have one or more approved, non-PvA app versions</p></li>
+<li><p>have one or more approved, non-PvA app versions, and some that have been submitted for approval to be PvA</p></li>
+<li><p>have one or more approved PvA app versions</p></li>
+</ul></li>
+<li><p>represent as another sum type</p></li>
 </ul>
 </div>
 </div>
-<div id="representing-publicapplisting-versions-7" class="slide section level1">
-<h1>representing <code>PublicAppListing</code> versions</h1>
-<p>we have one or more approved, non-PvA app versions</p>
+<div id="representing-publicapplisting-approved-versions-1" class="slide section level1">
+<h1>representing <code>PublicAppListing</code> approved versions</h1>
+<pre><code>trait ApprovedApps[F[_[_], _], NonPvA, PvA]
+case class ApprovedNonPvA[F[_[_], _], NonPvA, PvA] ...
+case class ApprovedNonPvAWithSubmittedPvA[F[_[_], _], NonPvA, PvA] ...
+case class ApprovedPvA[F[_[_], _], NonPvA, PvA] ...</code></pre>
+</div>
+<div id="representing-publicapplisting-approved-non-pva-versions" class="slide section level1">
+<h1>representing <code>PublicAppListing</code> approved, non-PvA versions</h1>
+<div>
+<ul class="incremental">
+<li><p>approved non-PvA app versions</p>
+<ul class="incremental">
+<li><p>must be public</p>
+<ul class="incremental">
+<li><code>approvedNonPvA: NonEmptyList[F[Public, NonPvA]]</code></li>
+</ul></li>
+<li><p>can have private, non-PvA apps</p>
+<ul class="incremental">
+<li><code>privateNonPvA: List[F[Private, NonPvA]]</code></li>
+</ul></li>
+<li><p>can have private, PvA apps, possibly with draft pricing</p>
+<ul class="incremental">
+<li><code>privatePvA: Option[(Option[DraftPricing], NonEmptyList[F[Private, PvA]])]</code></li>
+</ul></li>
+</ul></li>
+</ul>
+</div>
+</div>
+<div id="representing-publicapplisting-approved-non-pva-versions-1" class="slide section level1">
+<h1>representing <code>PublicAppListing</code> approved, non-PvA versions</h1>
+<p>All together</p>
 <pre><code>final case class ApprovedNonPvA[F[_[_], _], NonPvA, PvA]
   ( approvedNonPvA: NonEmptyList[F[Public, NonPvA]]
   , privateNonPvA: List[F[Private, NonPvA]]
   , privatePvA: Option[(Option[DraftPricing], NonEmptyList[F[Private, PvA]])]
   ) extends ApprovedApps[F, NonPvA, PvA]</code></pre>
 </div>
-<div id="representing-publicapplisting-versions-8" class="slide section level1">
-<h1>representing <code>PublicAppListing</code> versions</h1>
-<p>we have one or more approved, non-PvA app versions, and some that have been submitted for approval to be PvA</p>
+<div id="representing-publicapplisting-approved-nonpva-apps-with-submitted-pva-apps" class="slide section level1">
+<h1>representing <code>PublicAppListing</code> approved nonPvA apps, with submitted PvA apps</h1>
+<div>
+<ul class="incremental">
+<li><p>where there are approved non-PvA apps with a submitted PvA app</p>
+<ul class="incremental">
+<li><p>non-PvA apps are public</p>
+<ul class="incremental">
+<li><code>approvedNonPvA: NonEmptyList[F[Public, NonPvA]]</code></li>
+</ul></li>
+<li><p>the submitted app must be public</p>
+<ul class="incremental">
+<li><code>submittedPvA: F[Public, PvA]</code></li>
+</ul></li>
+<li><p>can have draft pricing</p>
+<ul class="incremental">
+<li><code>draftPricing: Option[DraftPricing]</code></li>
+</ul></li>
+<li><p>can have private, non-PvA apps</p>
+<ul class="incremental">
+<li><code>privateNonPvA: List[F[Private, NonPvA]]</code></li>
+</ul></li>
+<li><p>can have private, PvA apps</p>
+<ul class="incremental">
+<li><code>privatePvA: NonEmptyList[F[Private, PvA]]</code></li>
+</ul></li>
+</ul></li>
+</ul>
+</div>
+</div>
+<div id="representing-publicapplisting-approved-nonpva-apps-with-submitted-pva-apps-1" class="slide section level1">
+<h1>representing <code>PublicAppListing</code> approved nonPvA apps, with submitted PvA apps</h1>
+<p>All together</p>
 <pre><code>final case class ApprovedNonPvAWithSubmittedPvA[F[_[_], _], NonPvA, PvA]
   ( approvedNonPvA: Approved[F, NonPvA]
   , submittedPvA: Submitted[F, PvA]
@@ -458,9 +662,37 @@ type SubmittedDataCenter =
   , draftPricing: Option[DraftPricing]
   ) extends ApprovedApps[F, NonPvA, PvA]</code></pre>
 </div>
-<div id="representing-publicapplisting-versions-9" class="slide section level1">
-<h1>representing <code>PublicAppListing</code> versions</h1>
-<p>we have one or more approved PvA app versions</p>
+<div id="representing-publicapplisting-approved-pva-apps" class="slide section level1">
+<h1>representing <code>PublicAppListing</code> approved PvA apps</h1>
+<ul>
+<li><p>approved PvA apps</p>
+<ul>
+<li><p>must be public</p>
+<ul>
+<li><code>approvedPvA: NonEmptyList[F[Public, PvA]]</code></li>
+</ul></li>
+<li><p>can have draft pricing</p>
+<ul>
+<li><code>draftPricing: Option[DraftPricing]</code></li>
+</ul></li>
+<li><p>can have private, PvA apps</p>
+<ul>
+<li><code>privatePvA: List[F[Private, PvA]]</code></li>
+</ul></li>
+<li><p>can have approved, non-PvA apps</p>
+<ul>
+<li><code>approvedNonPvA: List[F[Public, NonPvA]]</code></li>
+</ul></li>
+<li><p>can have private, non-PvA apps</p>
+<ul>
+<li><code>privateNonPvA: List[F[Private, NonPvA]]</code></li>
+</ul></li>
+</ul></li>
+</ul>
+</div>
+<div id="representing-publicapplisting-approved-pva-apps-1" class="slide section level1">
+<h1>representing <code>PublicAppListing</code> approved PvA apps</h1>
+<p>All together</p>
 <pre><code>final case class ApprovedPvA[F[_[_], _], NonPvA, PvA]
   ( approvedPvA: Approved[F, PvA]
   , privatePvA: List[F[Private, PvA]]
@@ -469,11 +701,11 @@ type SubmittedDataCenter =
   , draftPricing: Option[DraftPricing]
   ) extends ApprovedApps[F, NonPvA, PvA]</code></pre>
 </div>
-<div id="representing-publicapplisting-versions-10" class="slide section level1">
+<div id="representing-publicapplisting-versions-4" class="slide section level1">
 <h1>representing <code>PublicAppListing</code> versions</h1>
 <p>more type aliases for great good</p>
-<pre><code>type ApprovedCloud =
-  ApprovedApps[CloudApp, CloudApp.Paid.Free, CloudApp.Paid.ViaAtlassian]
+<pre><code>type ApprovedConnect =
+  ApprovedApps[ConnectApp, ConnectApp.Paid.Free, ConnectApp.Paid.ViaAtlassian]
 
 type ApprovedServer =
   ApprovedApps[ServerApp, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor, ServerApp.Paid.ViaAtlassian]
@@ -481,19 +713,23 @@ type ApprovedServer =
 type ApprovedDataCenter =
   ApprovedApps[DataCenterApp, DataCenterApp.Paid.Free \/ DataCenterApp.Paid.ViaVendor, DataCenterApp.Paid</code></pre>
 </div>
-<div id="representing-publicapplisting-versions-11" class="slide section level1">
+<div id="representing-publicapplisting-versions-5" class="slide section level1">
 <h1>representing <code>PublicAppListing</code> versions</h1>
-<p>time to combine them all together</p>
+<ul>
+<li><p>time to combine submitted and approved together</p></li>
+<li><p>first, we’ll try a naive approach</p></li>
+</ul>
 </div>
-<div id="representing-publicapplisting-versions-12" class="slide section level1">
+<div id="representing-publicapplisting-versions-6" class="slide section level1">
 <h1>representing <code>PublicAppListing</code> versions</h1>
 <div>
-<pre><code>(SubmittedCloud \/ ApprovedCloud) \&amp;/
+<pre><code>(SubmittedConnect \/ ApprovedConnect) \&amp;/
   (SubmittedServer \/ ApprovedServer) \&amp;/
   (SubmittedDataCenter \/ ApprovedDataCenter)</code></pre>
 <ul class="incremental">
 <li><p>not good enough</p></li>
 <li><p>allows us to have no approved apps</p></li>
+<li><p>what do we really want that <code>\/</code> and <code>\&amp;/</code> aren’t giving us?</p></li>
 </ul>
 </div>
 </div>
@@ -504,14 +740,14 @@ final case class ThisRight[A, B, C, D](b: B, c: Option[C]) extends TheseRights[A
 final case class ThatRight[A, B, C, D](a: Option[A], d: D) extends TheseRights[A, B, C, D]
 final case class BothRight[A, B, C, D](b: B, d: D) extends TheseRights[A, B, C, D]</code></pre>
 </div>
-<div id="representing-publicapplisting-versions-13" class="slide section level1">
+<div id="representing-publicapplisting-versions-7" class="slide section level1">
 <h1>representing <code>PublicAppListing</code> versions</h1>
 <ul>
 <li><p>now we can combine submitted and approved apps</p></li>
 <li><p>we can guarantee that at least one is non-empty</p></li>
 </ul>
 </div>
-<div id="representing-publicapplisting-versions-14" class="slide section level1">
+<div id="representing-publicapplisting-versions-8" class="slide section level1">
 <h1>representing <code>PublicAppListing</code> versions</h1>
 <p>combine server and datacenter</p>
 <pre><code>type ServerDataCenter =
@@ -525,45 +761,38 @@ final case class BothRight[A, B, C, D](b: B, d: D) extends TheseRights[A, B, C, 
     ]
   )</code></pre>
 </div>
-<div id="representing-publicapplisting-versions-15" class="slide section level1">
+<div id="representing-publicapplisting-versions-9" class="slide section level1">
 <h1>representing <code>PublicAppListing</code> versions</h1>
-<p>combine those with cloud</p>
-<pre><code>type CloudServerDataCenter =
+<p>combine those with connect</p>
+<pre><code>type ConnectServerDataCenter =
   TheseRights[
-    SubmittedCloud \/ PrivateCloud,
-    ApprovedCloud,
+    SubmittedConnect \/ PrivateConnect,
+    ApprovedConnect,
     PrivateServerDataCenter,
     ServerDataCenter
   ]</code></pre>
 </div>
-<div id="representing-publicapplisting-versions-16" class="slide section level1">
+<div id="representing-publicapplisting-versions-10" class="slide section level1">
 <h1>representing <code>PublicAppListing</code> versions</h1>
 <p>throw in some instructional and workflow goodness</p>
-<pre><code>type PrivateInstructionalWorkflow =
-  NonEmptyList[
-    InstructionalApp[Private, InstructionalApp.Paid]] \&amp;/
-    NonEmptyList[WorkflowApp[Private, WorkflowApp.Paid]
-  ]
-
-type PublicInstructionalWorkflow =
+<pre><code>case class PublicInstructionalWorkflow
   ( NonEmptyList[InstructionalApp[Public, InstructionalApp.Paid]] \&amp;/ NonEmptyList[WorkflowApp[Public, WorkflowApp.Paid]]
   , privateInstructional: List[InstructionalApp[Private, InstructionalApp.Paid]]
   , privateWorkflow: List[WorkflowApp[Private, WorkflowApp.Paid]]
   )</code></pre>
 </div>
-<div id="representing-publicapplisting-versions-17" class="slide section level1">
+<div id="representing-publicapplisting-versions-11" class="slide section level1">
 <h1>representing <code>PublicAppListing</code> versions</h1>
 <p>put it all together</p>
-<pre><code>type Versions =
-  TheseRights[
-    PrivateInstructionalWorkflow,
-    PublicInstructionalWorkflow,
-    PrivateServerDataCenter \&amp;/ PrivateCloud,
-    CloudServerDataCenter
-  ]</code></pre>
+<pre><code>TheseRights[
+  PrivateInstructionalApps \&amp;/ PrivateWorkflowApps,
+  PublicInstructionalWorkflow,
+  PrivateServerDataCenter \&amp;/ PrivateConnect,
+  ConnectServerDataCenter
+]</code></pre>
 </div>
-<div id="representing-publicapplistings-1" class="slide section level1">
-<h1>representing <code>PublicAppListing</code>s</h1>
+<div id="so-whats-an-applisting" class="slide section level1">
+<h1>so what’s an <code>AppListing</code>?</h1>
 <pre><code>type AppListing =
   PrivateAppListing \/
   SubmittedAppListing \/

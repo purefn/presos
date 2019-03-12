@@ -1,5 +1,5 @@
 #! /usr/bin/env nix-shell
-#! nix-shell -i bash -p pandoc
+#! nix-shell -i bash -p haskell.packages.ghc863.pandoc
 
 set -eux
 

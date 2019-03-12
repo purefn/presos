@@ -1,6 +1,7 @@
 % Marketplace Data Model
 % Rich Wallace
 % Oct 4, 2018
+% updated Mar 5, 2019
 
 # in the beginning
 
@@ -96,7 +97,7 @@ life was simple. plugins were
 
 :::
 
-# CloudApp
+# ConnectApp
 
 ::: incremental
 
@@ -106,11 +107,15 @@ life was simple. plugins were
 
 - *can* have a list of scopes
 
-- *must* specify compatibility with at least one Cloud application (versioning doesn't matter because it's Cloud)
-
 - *must* be free or paid via Atlassian
 
+  - if it's free
+
+    - *must* specify compatibility with at least one Server and/or Cloud applications
+
   - if it's paid via Atlassian, it must have a link to documentation
+
+    - *must* specify compatibility with at least one Cloud application
 :::
 
 # ServerApp
@@ -148,6 +153,10 @@ life was simple. plugins were
     - *can* be compatible with one or more applications
 
 :::
+
+# DataCenterApp
+
+- has the same invariants as `ServerApp`s
 
 # InstructionalApp
 
@@ -206,7 +215,7 @@ object Status {
 }
 ```
 
-- `CloudApp[Private, ...]` vs. `CloudApp[Public, ...]`
+- `ConnectApp[Private, ...]` vs. `ConnectApp[Public, ...]`
 
 :::
 
@@ -217,7 +226,7 @@ object Status {
 we also parameterize payment type
 
 ```
-  object CloudApp {
+  object ConnectApp {
     // snip
     object Paid {
       final case class Free(doc: Option[URI])
@@ -226,19 +235,19 @@ we also parameterize payment type
   }
 ```
 
-- `CloudApp[..., Free]` vs. `CloudApp[..., ViaAtlassian]` vs. `CloudApp[..., Free \/ ViaAtlassian]`
+- `ConnectApp[..., Free]` vs. `ConnectApp[..., ViaAtlassian]` vs. `ConnectApp[..., Free \/ ViaAtlassian]`
 
 :::
 
-# `App` sum type
+# What is an `App`?
 
 ::: incremental
 
 An `App` can be one of many things
 
-- `CloudApp[Private, CloudApp.Paid.Free \/ CloudApp.Paid.ViaAtlassian]`
+- `ConnectApp[Private, ConnectApp.Paid.Free \/ ConnectApp.Paid.ViaAtlassian]`
 
-- `CloudApp[Public, CloudApp.Paid.Free \/ CloudApp.Paid.ViaAtlassian]`
+- `ConnectApp[Public, ConnectApp.Paid.Free \/ ConnectApp.Paid.ViaAtlassian]`
 
 - `ServerApp[Private, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor \/ ServerApp.Paid.ViaAtlassian]`
 
@@ -255,6 +264,21 @@ An `App` can be one of many things
 - `WorkflowApp[Private, WorkflowApp.Paid.Free \/ WorkflowApp.Paid.ViaVendor]`
 
 - `WorkflowApp[Public, WorkflowApp.Paid.Free \/ WorkflowApp.Paid.ViaVendor]`
+
+:::
+
+# representing `App`s
+
+    final case class App(value: AppF[Public] \/ AppF[Private])
+
+    sealed trait AppF[F[_]]
+    object AppF {
+      case class Server[S[_]](app: ServerApp[S, ServerApp.Paid]) extends AppF[S]
+      case class DataCenter[S[_]](app: DataCenterApp[S, DataCenterApp.Paid]) extends AppF[S]
+      case class Connect[S[_]](app: ConnectApp[S, ConnectApp.Paid]) extends AppF[S]
+      case class Instructional[S[_]](app: InstructionalApp[S, InstructionalApp.Paid])
+      case class Workflow[S[_]](app: WorkflowApp[S, WorkflowApp.Paid]) extends AppF[S]
+    }
 
 :::
 
@@ -281,6 +305,12 @@ An `App` can be one of many things
     - if it contains PvA apps, it *can* have draft pricing for that type of app
 
 - when an app listing contains Server or Data Center apps, it *must* contain compatibility history
+
+- *can* have a logo
+
+- *can* have a tag line
+
+- *can* have a summary
 
 :::
 
@@ -324,77 +354,135 @@ An `App` can be one of many things
 
 :::
 
-# representing `PrivateAppListing`s
+# representing `PrivateAppListing` versions
 
 ::: incremental
 
 - optional values are represented as `Status.Private`, i.e. `Option`
 
-- app versions are represented as
+- means we end up with
+
+  - `summary: Option[String]`
+
+  - `details: Option[LegacyPluginDetails \&/ String]`
+
+- why not also `logo: Option[Logo]`
+
+  - legacy data :(
 
 :::
 
-# representing `PrivateAppListing` versions
+# representing `PrivateAppListing` Connect versions
 
 ::: incremental
 
-- a collection of private cloud apps that are free
+- a collection of private connect apps that are free
 
-    - `NonEmptyList[CloudApp[Private, CloudApp.Paid.Free]]`
+    - `type PrivateFreeConnectApps = NonEmptyList[ConnectApp[Private, ConnectApp.Paid.Free]]`
 
 -  or paid via atlassian
 
-    - `NonEmptyList[CloudApp[Private, CloudApp.Paid.PaidViaAtlassian]]`
+    - `type PrivatePvAConnectApps = NonEmptyList[ConnectApp[Private, ConnectApp.Paid.PaidViaAtlassian]]`
 
 - together, that is
 
-    - `NonEmptyList[CloudApp[Private, CloudApp.Paid.Free]] \&/ NonEmptyList[CloudApp[Private, CloudApp.Paid.PaidViaAtlassian]]`
-
+    - `type PrivateConnectApps = PrivateFreeConnectApps \&/ PrivatePvAConnectApps`
 
 :::
 
-# representing `PrivateAppListing` versions
+# representing `PrivateAppListing` Server versions
+
+::: incremental
+
+- a collection of private server apps that are free or paid via vendor
+
+    - `type PrivateNonPvAServerApps = NonEmptyList[ServerApp[Private, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor]]`
+
+-  or paid via atlassian
+
+    - `type PrivatePvAServerApps = NonEmptyList[ServerApp[Private, ServerApp.Paid.PaidViaAtlassian]]`
+
+- together, that is
+
+    - `type PrivateServerApps = PrivateNonPvAServerApps \&/ PrivatePvAServerApps`
+
+:::
+
+# representing `PrivateAppListing` DataCenter versions
+
+:::incremental
+
+- a collection of private data center apps that are free or paid via vendor
+
+    - `type PrivateNonPvADataCenterApps = NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.Free \/ DataCenterApp.Paid.ViaVendor]]`
+
+-  or paid via atlassian
+
+    - `type PrivatePvADataCenterApps = NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.PaidViaAtlassian]]`
+
+- together, that is
+
+    - `type PrivateDataCenterApps = PrivateNonPvADataCenterApps \&/ PrivatePvADataCenterApps`
+
+:::
+
+# representing `PrivateAppListing` Server+DC versions
 
 ::: incremental
 
 - a collection of private server and/or data center apps that are free, paid via vendor, or paid via atlassian
 
-    - `NonEmptyList[ServerApp[Private, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor]] \&/ NonEmptyList[ServerApp[Private, ServerApp.Paid.ViaAtlassian]]`
-
-    - `NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.Free \/ DataCenterApp.Paid.ViaVendor]] \&/ NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.ViaAtlassian]]`
-
 - with a compatibility history, `PluginCompatibilityHistory`
 
-    - `
+    - ` type PrivateServerDataCenterApps =
   ( PluginCompatibilityHistory
-  , NonEmptyList[ServerApp[Private, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor]] \&/ NonEmptyList[ServerApp[Private, ServerApp.Paid.ViaAtlassian]] \&/
-    NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.Free \/ DataCenterApp.Paid.ViaVendor]] \&/ NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.ViaAtlassian]]
+  , PrivateServerApps \&/ PrivateDataCenterApps
   )`
 
 :::
 
-# representing `PrivateAppListing` versions
+# representing `PrivateAppListing` instructional and workflow versions
 
 ::: incremental
 
-- instructional apps are easy `NonEmptyList[InstructionalApp[Private, InstructionalApp.Paid]]`
+- instructional apps are easy
 
-- so are workflow apps `NonEmptyList[WorkflowApp[Private, WorkflowApp.Paid]]`
+  - `type PrivateInstructionalApps = NonEmptyList[InstructionalApp[Private, InstructionalApp.Paid]]`
 
-- when we combine them together we get
+- so are workflow apps
+
+  - `type PrivateWorkflowApps = NonEmptyList[WorkflowApp[Private, WorkflowApp.Paid]]`
 
 :::
 
 # representing `PrivateAppListing` versions
 
+All together we have
+
 ```
-NonEmptyList[CloudApp[Private, CloudApp.Paid.Free]] \&/ NonEmptyList[CloudApp[Private, CloudApp.Paid.PaidViaAtlassian]] \&/
-  ( PluginCompatibilityHistory
-  , NonEmptyList[ServerApp[Private, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor]] \&/ NonEmptyList[ServerApp[Private, ServerApp.Paid.ViaAtlassian]] \&/
-    NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.Free \/ DataCenterApp.Paid.ViaVendor]] \&/ NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.ViaAtlassian]]
-  ) \&/
-  NonEmptyList[InstructionalApp[Private, InstructionalApp.Paid]] \&/
-  NonEmptyList[WorkflowApp[Private, WorkflowApp.Paid]]
+type PrivateApps =
+  PrivateConnectApps
+    \&/ PrivateServerDataCenterApps
+    \&/ PrivateInstructionalApps
+    \&/ PrivateWorkflowApps
+```
+
+# representing `PrivateAppListing` versions
+
+Which expands to
+
+```
+NonEmptyList[ConnectApp[Private, ConnectApp.Paid.Free]]
+  \&/ NonEmptyList[ConnectApp[Private, ConnectApp.Paid.PaidViaAtlassian]]
+  \&/
+    ( PluginCompatibilityHistory
+    , NonEmptyList[ServerApp[Private, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor]]
+        \&/ NonEmptyList[ServerApp[Private, ServerApp.Paid.ViaAtlassian]]
+        \&/ NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.Free \/ DataCenterApp.Paid.ViaVendor]]
+        \&/ NonEmptyList[DataCenterApp[Private, DataCenterApp.Paid.ViaAtlassian]]
+    )
+  \&/ NonEmptyList[InstructionalApp[Private, InstructionalApp.Paid]]
+  \&/ NonEmptyList[WorkflowApp[Private, WorkflowApp.Paid]]
 ```
 
 # representing `PublicAppListing`s
@@ -403,7 +491,7 @@ NonEmptyList[CloudApp[Private, CloudApp.Paid.Free]] \&/ NonEmptyList[CloudApp[Pr
 
 - required values are represented as `Status.Public`, i.e. `Id[A]`, i.e. `A`
 
-- each app type can be different states
+- each app type can have different states
 
     - zero or more private
 
@@ -425,24 +513,58 @@ private apps are easy, we just reuse types from `PrivateAppListing`
 
 :::
 
-# representing `PublicAppListing` versions
+# representing `PublicAppListing` submitted versions
 
 ::: incremental
 
-- submitted, non paid via Atlassian apps are a little more interesting
+- an app submitted for approval can be
 
-- they can also have private apps
+  - Non-PvA
 
-- those private apps can be non paid via Atlassian or paid via Atlassian
+  - PvA
 
-- when we have paid via Atlassian, it can have draft pricing
+- represent it as a sum type
 
 :::
 
-# representing `PublicAppListing` versions
+# representing `PublicAppListing` submitted versions
 
 ```
-final case class SubmittedNonPvA[F[_[_], _], NonPvA, PvA]
+trait SubmittedApps[F[_[_], _], NonPvA, PvA]
+
+case class SubmittedNonPvA[F[_[_], _], NonPvA, PvA] ...
+
+case class SubmittedPvA[F[_[_], _], NonPvA, PvA] ...
+```
+
+# representing `PublicAppListing` submitted non-PvA versions
+
+:::incremental
+
+- a submitted, non paid via Atlassian app
+
+  - must be public
+
+    - `submittedNonPvA: F[Public, NonPvA]`
+
+  - can also have non-paid via Atlassian private apps
+
+    - `privateNonPvA: List[F[Private, NonPvA]]`
+
+  - can also have paid via Atlassian private apps
+
+    - when there are, it can have draft pricing
+
+    - `privatePvA: Option[(NonEmptyList[F[Private, PvA]], Option[DraftPricing])]`
+
+:::
+
+# representing `PublicAppListing` submitted non-PvA versions
+
+Taken together
+
+```
+case class SubmittedNonPvA[F[_[_], _], NonPvA, PvA]
   ( submittedNonPvA: F[Public, NonPvA]
   , privateNonPvA: List[F[Private, NonPvA]]
   , privatePvA: Option[(NonEmptyList[F[Private, PvA]], Option[DraftPricing])]
@@ -455,19 +577,31 @@ final case class SubmittedNonPvA[F[_[_], _], NonPvA, PvA]
 
 - submitted, paid via Atlassian apps
 
-    - can have draft pricing
+  - must be public
 
-    - can also have private apps
+    - `submittedPvA: F[Public, PvA]`
 
-    - those private apps can be non paid via Atlassian or paid via Atlassian
+  - can have draft pricing
+
+    - `draftPricing: Option[DraftPricing]`
+
+  - can also have private PvA apps
+
+    - `privatePvA: List[F[Private, PvA]]`
+
+  - and private Non-PvA apps
+
+    - `privateNonPvA: List[F[Private, NonPvA]]`
 
 :::
 
 # representing `PublicAppListing` versions
 
+Taken together
+
 ```
-final case class SubmittedPvA[F[_[_], _], NonPvA, PvA]
-  ( submittedPvA: NonEmptyList[F[Public, PvA]]
+case class SubmittedPvA[F[_[_], _], NonPvA, PvA]
+  ( submittedPvA: F[Public, PvA]
   , privatePvA: List[F[Private, PvA]]
   , privateNonPvA: List[F[Private, NonPvA]]
   , draftPricing: Option[DraftPricing]
@@ -479,8 +613,8 @@ final case class SubmittedPvA[F[_[_], _], NonPvA, PvA]
 introduce some type aliases to make talking about submitted apps easier
 
 ```
-type SubmittedCloud =
-  SubmittedApps[CloudApp, CloudApp.Paid.Free, CloudApp.Paid.ViaAtlassian]
+type SubmittedConnect =
+  SubmittedApps[ConnectApp, ConnectApp.Paid.Free, ConnectApp.Paid.ViaAtlassian]
 
 type SubmittedServer =
   SubmittedApps[ServerApp, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor, ServerApp.Paid.ViaAtlassian]
@@ -489,23 +623,53 @@ type SubmittedDataCenter =
   SubmittedApps[DataCenterApp, DataCenterApp.Paid.Free \/ DataCenterApp.Paid.ViaVendor, DataCenterApp.Paid.ViaAtlassian]
 ```
 
-# representing `PublicAppListing` versions
+# representing `PublicAppListing` approved versions
 
 ::: incremental
 
-Approved apps have somewhat similar structure
+- when there are approved apps we could
 
-- we have one or more approved, non-PvA app versions
+  - have one or more approved, non-PvA app versions
 
-- we have one or more approved, non-PvA app versions, and some that have been submitted for approval to be PvA
+  - have one or more approved, non-PvA app versions, and some that have been submitted for approval to be PvA
 
-- we have one or more approved PvA app versions
+  - have one or more approved PvA app versions
+
+- represent as another sum type
 
 :::
 
-# representing `PublicAppListing` versions
+# representing `PublicAppListing` approved versions
 
-we have one or more approved, non-PvA app versions
+```
+trait ApprovedApps[F[_[_], _], NonPvA, PvA]
+case class ApprovedNonPvA[F[_[_], _], NonPvA, PvA] ...
+case class ApprovedNonPvAWithSubmittedPvA[F[_[_], _], NonPvA, PvA] ...
+case class ApprovedPvA[F[_[_], _], NonPvA, PvA] ...
+```
+
+# representing `PublicAppListing` approved, non-PvA versions
+
+:::incremental
+
+- approved non-PvA app versions
+
+    - must be public
+
+      - `approvedNonPvA: NonEmptyList[F[Public, NonPvA]]`
+
+    - can have private, non-PvA apps
+
+      - `privateNonPvA: List[F[Private, NonPvA]]`
+
+    - can have private, PvA apps, possibly with draft pricing
+
+      - `privatePvA: Option[(Option[DraftPricing], NonEmptyList[F[Private, PvA]])]`
+:::
+
+# representing `PublicAppListing` approved, non-PvA versions
+
+All together
 
 ```
 final case class ApprovedNonPvA[F[_[_], _], NonPvA, PvA]
@@ -515,9 +679,37 @@ final case class ApprovedNonPvA[F[_[_], _], NonPvA, PvA]
   ) extends ApprovedApps[F, NonPvA, PvA]
 ```
 
-# representing `PublicAppListing` versions
+# representing `PublicAppListing` approved nonPvA apps, with submitted PvA apps
 
-we have one or more approved, non-PvA app versions, and some that have been submitted for approval to be PvA
+:::incremental
+
+- where there are approved non-PvA apps with a submitted PvA app
+
+    - non-PvA apps are public
+
+      - `approvedNonPvA: NonEmptyList[F[Public, NonPvA]]`
+
+    - the submitted app must be public
+
+        - `submittedPvA: F[Public, PvA]`
+
+    - can have draft pricing
+
+        - `draftPricing: Option[DraftPricing]`
+
+    - can have private, non-PvA apps
+
+      - `privateNonPvA: List[F[Private, NonPvA]]`
+
+    - can have private, PvA apps
+
+      - `privatePvA: NonEmptyList[F[Private, PvA]]`
+
+:::
+
+# representing `PublicAppListing` approved nonPvA apps, with submitted PvA apps
+
+All together
 
 ```
 final case class ApprovedNonPvAWithSubmittedPvA[F[_[_], _], NonPvA, PvA]
@@ -529,9 +721,33 @@ final case class ApprovedNonPvAWithSubmittedPvA[F[_[_], _], NonPvA, PvA]
   ) extends ApprovedApps[F, NonPvA, PvA]
 ```
 
-# representing `PublicAppListing` versions
+# representing `PublicAppListing` approved PvA apps
 
-we have one or more approved PvA app versions
+- approved PvA apps
+
+  - must be public
+
+    - `approvedPvA: NonEmptyList[F[Public, PvA]]`
+
+  - can have draft pricing
+
+    - `draftPricing: Option[DraftPricing]`
+
+  - can have private, PvA apps
+
+    - `privatePvA: List[F[Private, PvA]]`
+
+  - can have approved, non-PvA apps
+
+    - `approvedNonPvA: List[F[Public, NonPvA]]`
+
+  - can have private, non-PvA apps
+
+    - `privateNonPvA: List[F[Private, NonPvA]]`
+
+# representing `PublicAppListing` approved PvA apps
+
+All together
 
 ```
 final case class ApprovedPvA[F[_[_], _], NonPvA, PvA]
@@ -548,8 +764,8 @@ final case class ApprovedPvA[F[_[_], _], NonPvA, PvA]
 more type aliases for great good
 
 ```
-type ApprovedCloud =
-  ApprovedApps[CloudApp, CloudApp.Paid.Free, CloudApp.Paid.ViaAtlassian]
+type ApprovedConnect =
+  ApprovedApps[ConnectApp, ConnectApp.Paid.Free, ConnectApp.Paid.ViaAtlassian]
 
 type ApprovedServer =
   ApprovedApps[ServerApp, ServerApp.Paid.Free \/ ServerApp.Paid.ViaVendor, ServerApp.Paid.ViaAtlassian]
@@ -560,14 +776,16 @@ type ApprovedDataCenter =
 
 # representing `PublicAppListing` versions
 
-time to combine them all together
+- time to combine submitted and approved together
+
+- first, we'll try a naive approach
 
 # representing `PublicAppListing` versions
 
 ::: incremental
 
 ```
-(SubmittedCloud \/ ApprovedCloud) \&/
+(SubmittedConnect \/ ApprovedConnect) \&/
   (SubmittedServer \/ ApprovedServer) \&/
   (SubmittedDataCenter \/ ApprovedDataCenter)
 ```
@@ -575,6 +793,8 @@ time to combine them all together
 - not good enough
 
 - allows us to have no approved apps
+
+- what do we really want that `\/` and `\&/` aren't giving us?
 
 :::
 
@@ -612,13 +832,13 @@ type ServerDataCenter =
 
 # representing `PublicAppListing` versions
 
-combine those with cloud
+combine those with connect
 
 ```
-type CloudServerDataCenter =
+type ConnectServerDataCenter =
   TheseRights[
-    SubmittedCloud \/ PrivateCloud,
-    ApprovedCloud,
+    SubmittedConnect \/ PrivateConnect,
+    ApprovedConnect,
     PrivateServerDataCenter,
     ServerDataCenter
   ]
@@ -629,13 +849,7 @@ type CloudServerDataCenter =
 throw in some instructional and workflow goodness
 
 ```
-type PrivateInstructionalWorkflow =
-  NonEmptyList[
-    InstructionalApp[Private, InstructionalApp.Paid]] \&/
-    NonEmptyList[WorkflowApp[Private, WorkflowApp.Paid]
-  ]
-
-type PublicInstructionalWorkflow =
+case class PublicInstructionalWorkflow
   ( NonEmptyList[InstructionalApp[Public, InstructionalApp.Paid]] \&/ NonEmptyList[WorkflowApp[Public, WorkflowApp.Paid]]
   , privateInstructional: List[InstructionalApp[Private, InstructionalApp.Paid]]
   , privateWorkflow: List[WorkflowApp[Private, WorkflowApp.Paid]]
@@ -647,16 +861,15 @@ type PublicInstructionalWorkflow =
 put it all together
 
 ```
-type Versions =
-  TheseRights[
-    PrivateInstructionalWorkflow,
-    PublicInstructionalWorkflow,
-    PrivateServerDataCenter \&/ PrivateCloud,
-    CloudServerDataCenter
-  ]
+TheseRights[
+  PrivateInstructionalApps \&/ PrivateWorkflowApps,
+  PublicInstructionalWorkflow,
+  PrivateServerDataCenter \&/ PrivateConnect,
+  ConnectServerDataCenter
+]
 ```
 
-# representing `PublicAppListing`s
+# so what's an `AppListing`?
 
 ```
 type AppListing =
